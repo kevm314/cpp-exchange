@@ -1,6 +1,0 @@
-/cpp-exchange/build/CMakeFiles/exchange.dir
-/cpp-exchange/build/CMakeFiles/edit_cache.dir
-/cpp-exchange/build/CMakeFiles/rebuild_cache.dir
-/cpp-exchange/build/matchmaker/CMakeFiles/matchmaker.dir
-/cpp-exchange/build/matchmaker/CMakeFiles/edit_cache.dir
-/cpp-exchange/build/matchmaker/CMakeFiles/rebuild_cache.dir

@@ -16,4 +16,6 @@ RUN git clone https://github.com/google/googletest.git -b release-1.12.1 &&\
     cd googletest &&\
     mkdir build &&\
     cd build &&\
-    cmake ..
+    cmake .. &&\
+    make &&\
+    make install

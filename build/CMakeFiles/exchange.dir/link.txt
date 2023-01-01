@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O0 -fPIC CMakeFiles/exchange.dir/main.cpp.o -o exchange  matchmaker/libmatchmaker.a 

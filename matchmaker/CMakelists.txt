@@ -7,28 +7,41 @@ if (MATCHMAKER_TEST)
     add_executable(matchmaker-test "")
 endif()
 
-
 set(
     TARGET_SOURCES 
     mock.cpp
 )
+set(
+    TEST_SOURCES 
+    tests/test_mock.cpp
+)
 
 add_library(matchmaker ${TARGET_SOURCES})
 
+## Testing
 
-if (MATCHMAKER_TEST OR TEST)
+# Test executable for project (overall testing)
+if (TEST)
+    target_sources(
+        exchange-test
+        PUBLIC
+        ${TARGET_SOURCES}
+        ${TEST_SOURCES}
+    )
+endif()
+# Test executable for current library only (isolated testing)
+if (MATCHMAKER_TEST)
     target_sources(
         matchmaker-test
         PUBLIC
         ${TARGET_SOURCES}
+        ${TEST_SOURCES}
     )
-endif()
-if (MATCHMAKER_TEST)
     gtest_discover_tests(matchmaker-test)
     target_link_libraries(
         matchmaker-test
-        gtest
         gtest_main
+        gtest
         pthread
     )
 endif()

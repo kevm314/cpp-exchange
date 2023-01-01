@@ -12,6 +12,16 @@ project(
 
 # Find packages here
 
+
+
+if (TEST)
+    enable_testing()
+    include(GoogleTest)
+    add_executable(exchange-test "")
+endif()
+
+
+
 include_directories("/usr/local/lib")
 include_directories(matchmaker)
 
@@ -20,3 +30,14 @@ add_subdirectory(./matchmaker)
 
 add_executable(exchange main.cpp)
 target_link_libraries(exchange matchmaker)
+
+# Test executable for project (overall testing)
+if (TEST)
+  gtest_discover_tests(exchange-test)
+  target_link_libraries(
+      exchange-test
+      gtest_main
+      gtest
+      pthread
+  )
+endif()

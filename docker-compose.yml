@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  exchange:
+    image: exchange:latest
+    volumes:
+      - ./:/cpp-exchange
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # execute bash in running container
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmatchmaker.a CMakeFiles/matchmaker.dir/mock.cpp.o
+/usr/bin/ranlib libmatchmaker.a

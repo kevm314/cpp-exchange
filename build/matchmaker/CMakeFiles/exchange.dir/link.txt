@@ -1,0 +1,2 @@
+/usr/bin/ar qc libexchange.a CMakeFiles/exchange.dir/mock.cpp.o
+/usr/bin/ranlib libexchange.a

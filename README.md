@@ -29,7 +29,12 @@ $ docker compose up
 
 ## TODO
 
-- set up cmakelists and test based build system (initial library added - intial structure set up)
 - add gtest
 - add doxygen
 - add logging library
+- tidy project folder structure:
+  - messaging (ring buffer, producers, consumers)
+  - receiver (producer that receives order events from users)
+  - journaller (records incoming events)
+  - matchmaker (order matching engine using incoming order events)
+  - dispatcher (dispatches order outcomes back to users)

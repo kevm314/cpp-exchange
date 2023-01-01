@@ -19,3 +19,10 @@ RUN git clone https://github.com/google/googletest.git -b release-1.12.1 &&\
     cmake .. &&\
     make &&\
     make install
+
+RUN git clone https://github.com/gabime/spdlog.git &&\
+    cd spdlog &&\
+    git checkout tags/v1.11.0 &&\
+    mkdir build && cd build &&\
+    cmake .. && make -j &&\
+    make install

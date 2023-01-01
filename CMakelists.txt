@@ -11,7 +11,10 @@ project(
   LANGUAGES CXX)
 
 # Find packages here
-
+if(NOT TARGET spdlog)
+    # Stand-alone build
+    find_package(spdlog REQUIRED)
+endif()
 
 
 if (TEST)
@@ -22,14 +25,20 @@ endif()
 
 
 
+
 include_directories("/usr/local/lib")
 include_directories(matchmaker)
 
 add_subdirectory(./matchmaker)
 
+set(
+  TARGET_LIBRARIES
+  spdlog::spdlog
+  matchmaker
+)
 
 add_executable(exchange main.cpp)
-target_link_libraries(exchange matchmaker)
+target_link_libraries(exchange ${TARGET_LIBRARIES})
 
 # Test executable for project (overall testing)
 if (TEST)

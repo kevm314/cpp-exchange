@@ -7,13 +7,15 @@ if (MATCHMAKER_TEST)
     add_executable(matchmaker-test "")
 endif()
 
+include_directories(.)
+
 set(
     TARGET_SOURCES 
-    mock.cpp
+    trade_order.cpp
 )
 set(
     TEST_SOURCES 
-    tests/test_mock.cpp
+    tests/test_trade_order.cpp
 )
 
 add_library(matchmaker ${TARGET_SOURCES})

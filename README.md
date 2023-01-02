@@ -41,7 +41,6 @@ docker compose up
 
 ## TODO
 
-- review matchmaker UML design in context of overall architecture
 - start implementation of matchmaker
 - tidy project folder structure:
   - messaging (ring buffer, producers, consumers)

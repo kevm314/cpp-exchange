@@ -41,7 +41,8 @@ docker compose up
 
 ## TODO
 
-- start UML design for the matchmaker library (orderbook class + data structure, orders class with order types, order matching algorithm)
+- review matchmaker UML design in context of overall architecture
+- start implementation of matchmaker
 - tidy project folder structure:
   - messaging (ring buffer, producers, consumers)
   - receiver (producer that receives order events from users)

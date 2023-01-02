@@ -10,12 +10,14 @@ endif()
 include_directories(.)
 
 set(
-    TARGET_SOURCES 
-    trade_order.cpp
+    TARGET_SOURCES
+    base_order_book.cpp
     instrument_symbol.cpp
+    trade_order.cpp
 )
 set(
     TEST_SOURCES 
+    tests/test_base_order_book.cpp
     tests/test_trade_order.cpp
 )
 

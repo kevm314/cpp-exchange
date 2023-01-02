@@ -12,6 +12,7 @@ include_directories(.)
 set(
     TARGET_SOURCES 
     trade_order.cpp
+    instrument_symbol.cpp
 )
 set(
     TEST_SOURCES 

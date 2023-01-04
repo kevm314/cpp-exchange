@@ -26,8 +26,8 @@ uint64_t SimplePriceBucket::GetTotalVolume() {
 matchmaker::TradeOrder* SimplePriceBucket::GetFirstOrder() {
     return order_list_head_;
 }
-bool SimplePriceBucket::InsertOrder(matchmaker::TradeOrder& trade_order) {
-    return true;
-}
+// bool SimplePriceBucket::InsertOrder(matchmaker::TradeOrder& trade_order) {
+//     return true;
+// }
 
 }

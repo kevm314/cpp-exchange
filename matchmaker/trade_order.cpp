@@ -28,7 +28,58 @@ TradeOrder::TradeOrder(
     price_(price), 
     size_(size), 
     timestamp_(timestamp)
+{
+    prev_order_ = nullptr;
+    next_order_ = nullptr;
+}
+TradeOrder::TradeOrder(TradeOrder& trade_order):
+    trade_id_(trade_order.GetTradeId()),
+    user_id_(trade_order.GetUserId()),
+    instrument_symbol_id_(trade_order.GetInstrumentSymbolId()), 
+    order_type_(trade_order.GetOrderType()), 
+    quotation_type_(trade_order.GetQuotationType()), 
+    request_type_(trade_order.GetRequestType()), 
+    order_outcome_(trade_order.GetOrderOutcome()), 
+    price_(trade_order.GetPrice()), 
+    size_(trade_order.GetSize()), 
+    timestamp_(trade_order.GetTimestamp()),
+    prev_order_(trade_order.GetPrevOrder()),
+    next_order_(trade_order.GetNextOrder())
 {}
+TradeOrder::TradeOrder(TradeOrder&& trade_order):
+    trade_id_(trade_order.GetTradeId()),
+    user_id_(trade_order.GetUserId()),
+    instrument_symbol_id_(trade_order.GetInstrumentSymbolId()), 
+    order_type_(trade_order.GetOrderType()), 
+    quotation_type_(trade_order.GetQuotationType()), 
+    request_type_(trade_order.GetRequestType()), 
+    order_outcome_(trade_order.GetOrderOutcome()), 
+    price_(trade_order.GetPrice()), 
+    size_(trade_order.GetSize()), 
+    timestamp_(trade_order.GetTimestamp()),
+    prev_order_(trade_order.GetPrevOrder()),
+    next_order_(trade_order.GetNextOrder())
+{
+    trade_order.SetPrevOrder(nullptr);
+    trade_order.SetNextOrder(nullptr);
+}
+TradeOrder& TradeOrder::operator=(TradeOrder&& trade_order) {
+    trade_id_ = trade_order.GetTradeId();
+    user_id_ = trade_order.GetUserId();
+    instrument_symbol_id_ = trade_order.GetInstrumentSymbolId(); 
+    order_type_ = trade_order.GetOrderType(); 
+    quotation_type_ = trade_order.GetQuotationType(); 
+    request_type_ = trade_order.GetRequestType(); 
+    order_outcome_ = trade_order.GetOrderOutcome(); 
+    price_ = trade_order.GetPrice(); 
+    size_ = trade_order.GetSize(); 
+    timestamp_ = trade_order.GetTimestamp();
+    prev_order_ = trade_order.GetPrevOrder();
+    next_order_ = trade_order.GetNextOrder();
+    trade_order.SetPrevOrder(nullptr);
+    trade_order.SetNextOrder(nullptr);
+    return *this;
+}
 std::array<uint8_t, 32> TradeOrder::GetTradeId() {
     return trade_id_;
 }
@@ -59,6 +110,17 @@ uint64_t TradeOrder::GetSize() {
 uint32_t TradeOrder::GetTimestamp() {
     return timestamp_;
 }
-
+TradeOrder* TradeOrder::GetPrevOrder() {
+    return prev_order_;
+}
+void TradeOrder::SetPrevOrder(TradeOrder* prev_order) {
+    prev_order_ = prev_order;
+}
+TradeOrder* TradeOrder::GetNextOrder() {
+    return next_order_;
+}
+void TradeOrder::SetNextOrder(TradeOrder* next_order) {
+    next_order_ = next_order;
+}
 
 }

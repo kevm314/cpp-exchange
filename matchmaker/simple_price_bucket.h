@@ -27,7 +27,7 @@ class SimplePriceBucket {
         uint64_t GetPrice();
         uint64_t GetTotalVolume();
         matchmaker::TradeOrder* GetFirstOrder();
-        bool InsertOrder(matchmaker::TradeOrder& trade_order);
+        // bool InsertOrder(matchmaker::TradeOrder& trade_order);
 };
 
 

@@ -15,16 +15,18 @@ namespace matchmaker {
  */
 class TradeOrder {
     private:
-        const std::array<uint8_t, 32> trade_id_;
-        const std::array<uint8_t, 32> user_id_; 
-        const uint32_t instrument_symbol_id_;
-        const TradeOrderType order_type_; 
-        const TradeQuotationType quotation_type_; 
-        const OrderRequestType request_type_; 
+        std::array<uint8_t, 32> trade_id_;
+        std::array<uint8_t, 32> user_id_; 
+        uint32_t instrument_symbol_id_;
+        TradeOrderType order_type_; 
+        TradeQuotationType quotation_type_; 
+        OrderRequestType request_type_; 
         OrderOutcomeType order_outcome_; 
         uint64_t price_; 
         uint64_t size_; 
-        const uint32_t timestamp_;
+        uint32_t timestamp_;
+        TradeOrder* prev_order_;
+        TradeOrder* next_order_;
     public:
         TradeOrder(
             std::array<uint8_t, 32> trade_id,
@@ -38,6 +40,9 @@ class TradeOrder {
             uint64_t size, 
             uint32_t timestamp
         );
+        TradeOrder(TradeOrder& trade_order);
+        TradeOrder(TradeOrder&& trade_order);
+        TradeOrder& operator=(TradeOrder&& trade_order);
         std::array<uint8_t, 32> GetTradeId();
         std::array<uint8_t, 32> GetUserId();
         uint32_t GetInstrumentSymbolId();
@@ -48,6 +53,10 @@ class TradeOrder {
         uint64_t GetPrice();
         uint64_t GetSize();
         uint32_t GetTimestamp();
+        TradeOrder* GetPrevOrder();
+        void SetPrevOrder(TradeOrder* prev_order);
+        TradeOrder* GetNextOrder();
+        void SetNextOrder(TradeOrder* next_order);
 };
 
 }

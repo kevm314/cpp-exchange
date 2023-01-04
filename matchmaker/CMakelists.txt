@@ -13,11 +13,15 @@ set(
     TARGET_SOURCES
     base_order_book.cpp
     instrument_symbol.cpp
+    simple_order_book.cpp
+    simple_price_bucket.cpp
     trade_order.cpp
 )
 set(
     TEST_SOURCES 
     tests/test_base_order_book.cpp
+    tests/test_simple_order_book.cpp
+    tests/test_simple_price_bucket.cpp
     tests/test_trade_order.cpp
 )
 

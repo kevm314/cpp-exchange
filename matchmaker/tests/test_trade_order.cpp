@@ -36,7 +36,7 @@ TEST(TestTradeOrder, SimpleConstruction) {
         size,
         timestamp
     );
-    ASSERT_THAT(trade_order.GetTaskId(), ::testing::ContainerEq(task_id));
+    ASSERT_THAT(trade_order.GetTradeId(), ::testing::ContainerEq(task_id));
     ASSERT_THAT(trade_order.GetUserId(), ::testing::ContainerEq(user_id));
     ASSERT_EQ(trade_order.GetInstrumentSymbolId(), instrument_symbol_id);
     ASSERT_EQ(trade_order.GetOrderType(), trade_order_type);

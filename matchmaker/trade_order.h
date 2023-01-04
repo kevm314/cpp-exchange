@@ -15,7 +15,7 @@ namespace matchmaker {
  */
 class TradeOrder {
     private:
-        const std::array<uint8_t, 32> task_id_;
+        const std::array<uint8_t, 32> trade_id_;
         const std::array<uint8_t, 32> user_id_; 
         const uint32_t instrument_symbol_id_;
         const TradeOrderType order_type_; 
@@ -27,7 +27,7 @@ class TradeOrder {
         const uint32_t timestamp_;
     public:
         TradeOrder(
-            std::array<uint8_t, 32> task_id,
+            std::array<uint8_t, 32> trade_id,
             std::array<uint8_t, 32> user_id,
             uint32_t instrument_symbol_id, 
             TradeOrderType order_type, 
@@ -38,7 +38,7 @@ class TradeOrder {
             uint64_t size, 
             uint32_t timestamp
         );
-        std::array<uint8_t, 32> GetTaskId();
+        std::array<uint8_t, 32> GetTradeId();
         std::array<uint8_t, 32> GetUserId();
         uint32_t GetInstrumentSymbolId();
         TradeOrderType GetOrderType();

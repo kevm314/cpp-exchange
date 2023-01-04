@@ -7,7 +7,7 @@
 namespace matchmaker {
 
 TradeOrder::TradeOrder(
-    std::array<uint8_t, 32> task_id, 
+    std::array<uint8_t, 32> trade_id, 
     std::array<uint8_t, 32> user_id,
     uint32_t instrument_symbol_id, 
     TradeOrderType order_type, 
@@ -18,7 +18,7 @@ TradeOrder::TradeOrder(
     uint64_t size, 
     uint32_t timestamp
 ):
-    task_id_(task_id),
+    trade_id_(trade_id),
     user_id_(user_id),
     instrument_symbol_id_(instrument_symbol_id), 
     order_type_(order_type), 
@@ -29,8 +29,8 @@ TradeOrder::TradeOrder(
     size_(size), 
     timestamp_(timestamp)
 {}
-std::array<uint8_t, 32> TradeOrder::GetTaskId() {
-    return task_id_;
+std::array<uint8_t, 32> TradeOrder::GetTradeId() {
+    return trade_id_;
 }
 std::array<uint8_t, 32> TradeOrder::GetUserId() {
     return user_id_;

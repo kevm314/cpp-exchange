@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -7,6 +8,7 @@
 #include "base_order_book.h"
 #include "instrument_symbol.h"
 #include "order_outcome_types.h"
+#include "trade_event.h"
 #include "trade_order.h"
 #include "trade_quotation_types.h"
 
@@ -19,15 +21,17 @@ namespace matchmaker {
  */
 class SimplePriceBucket {
     private:
-        TradeQuotationType quotation_type_; 
-        uint64_t price_; 
-        uint64_t total_volume_; 
+        TradeQuotationType quotation_type_;
+        uint32_t instrument_symbol_id_; 
+        uint64_t price_;
+        uint64_t total_volume_;
         matchmaker::TradeOrder* order_list_head_;
         matchmaker::TradeOrder* order_list_tail_;
         std::unordered_map<std::string, matchmaker::TradeOrder*> tracked_orders_;     
     public:
-        SimplePriceBucket(TradeQuotationType quotation_type, uint64_t price);
+        SimplePriceBucket(TradeQuotationType quotation_type, uint32_t instrument_symbol_id, uint64_t price);
         TradeQuotationType GetQuotationType();
+        uint32_t GetInstrumentSymbolId();
         uint64_t GetPrice();
         uint64_t GetTotalVolume();
         matchmaker::TradeOrder* GetFirstOrder();
@@ -42,7 +46,7 @@ class SimplePriceBucket {
          */
         bool InsertOrder(matchmaker::TradeOrder& trade_order);
         bool EraseOrder(matchmaker::TradeOrder& trade_order);
-        uint64_t FulfillOrder(matchmaker::TradeOrder& requested_order);
+        uint64_t FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>>& trade_events);
 };
 
 

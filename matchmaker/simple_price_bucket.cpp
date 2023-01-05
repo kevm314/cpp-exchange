@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "spdlog/spdlog.h"
@@ -15,10 +16,12 @@
 namespace matchmaker {
 
 SimplePriceBucket::SimplePriceBucket(
-    TradeQuotationType quotation_type, 
+    TradeQuotationType quotation_type,
+    uint32_t instrument_symbol_id,
     uint64_t price
 ) {
     quotation_type_ = quotation_type;
+    instrument_symbol_id_ = instrument_symbol_id;
     price_ = price;
     total_volume_ = 0;
     order_list_head_ = nullptr;
@@ -26,6 +29,9 @@ SimplePriceBucket::SimplePriceBucket(
 }
 TradeQuotationType SimplePriceBucket::GetQuotationType() {
     return quotation_type_;
+}
+uint32_t SimplePriceBucket::GetInstrumentSymbolId() {
+    return instrument_symbol_id_;
 }
 uint64_t SimplePriceBucket::GetPrice() {
     return price_;
@@ -105,10 +111,10 @@ bool SimplePriceBucket::EraseOrder(matchmaker::TradeOrder& trade_order) {
     tracked_orders_.erase(trade_id);
     return true;
 }
-uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order) {
-    const TradeQuotationType opposite_quote_needed = quotation_type_ == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
+uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>>& trade_events) {
+    const TradeQuotationType request_quote_needed = quotation_type_ == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
     // check if 0 orders in bucket or other invalid reasons
-    if (tracked_orders_.size() == 0 || requested_order.GetQuotationType() != opposite_quote_needed || requested_order.GetPrice() != price_ || requested_order.GetSize() == 0)
+    if (tracked_orders_.size() == 0 || requested_order.GetQuotationType() != request_quote_needed || requested_order.GetPrice() != price_ || requested_order.GetSize() == 0)
         return 0;
     // iterate through the orders to try and match the volume in FIFO manner
     TradeOrder* candidate_order = order_list_head_;
@@ -123,8 +129,23 @@ uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order
         requested_order.SetFilled(requested_order.GetFilled() + candidate_fulfilled_volume);
         total_volume_ -= candidate_fulfilled_volume;
         if (candidate_fulfilled_volume != 0) {
-            int i = 0;
-            // TODO: generate TradeEvent
+            std::array<uint8_t, 36> bid_trade_id;
+            std::array<uint8_t, 36> ask_trade_id;
+            if (request_quote_needed == TradeQuotationType::BID) {
+                bid_trade_id = requested_order.GetTradeId();
+                ask_trade_id = candidate_order->GetTradeId();
+            } else {
+                bid_trade_id = candidate_order->GetTradeId();
+                ask_trade_id = requested_order.GetTradeId();
+            }
+            spdlog::info("Trade event for symbol: " + std::to_string(instrument_symbol_id_) + " @ price: " + std::to_string(price_) +  " volume traded: " + std::to_string(candidate_fulfilled_volume));
+            trade_events->emplace_back(
+                bid_trade_id,
+                ask_trade_id,
+                instrument_symbol_id_,
+                price_,
+                candidate_fulfilled_volume
+            );
         }
         // move to next candidate order and check if any orders filled
         candidate_to_delete = candidate_order;

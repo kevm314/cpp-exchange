@@ -1,9 +1,11 @@
 #include <array>
+#include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "simple_price_bucket.h"
+#include "trade_event.h"
 #include "trade_quotation_types.h"
 
 
@@ -111,7 +113,7 @@ class TestSimplePriceBucketMockOrders : public MockBids, public MockAsks {
 
 TEST(TestSimplePriceBucket, SimpleConstruction) {
     uint64_t price = 10;
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, price);
     ASSERT_EQ(simple_pb.GetPrice(), price);
     ASSERT_EQ(simple_pb.GetTotalVolume(), 0);
     ASSERT_EQ(simple_pb.GetFirstOrder(), nullptr);
@@ -122,7 +124,7 @@ TEST(TestSimplePriceBucket, SimpleConstruction) {
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderInsertion) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
@@ -148,7 +150,7 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderInsertion) {
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, BadOrderInsertion) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, 1);
     ASSERT_FALSE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_FALSE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_FALSE(simple_pb.InsertOrder(mock_bids_[2]));
@@ -170,7 +172,7 @@ TEST_F(TestSimplePriceBucketMockOrders, BadOrderInsertion) {
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderDeletion) {
     // Set up price bucket and insert mock bids
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
@@ -227,12 +229,13 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderDeletion) {
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v1) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[0]), 1);
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[0], trade_events), 1);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     // test remaining bid orders
     ASSERT_EQ(
@@ -246,19 +249,26 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v1) {
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
     ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[1])));
     ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[2])));
-}
+    // check trade events
+    // first trade
+    ASSERT_EQ(trade_events->size(), 1);
+    ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetSize(), 1);
+} 
 
 /**
  * @brief Test for order filling (1 ask against 3 bids - 1 ask, 2 bids completely filled, 1 bid partially filled)
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[1]), 4);
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[1], trade_events), 4);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
     // test remaining bid orders
@@ -275,6 +285,21 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[1])));
     ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[2])));
+    // check trade events
+    ASSERT_EQ(trade_events->size(), 3);
+    // first trade
+    ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetSize(), 1);
+    // second trade
+    ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetSize(), 2);
+    // third trade
+    ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetSize(), 1);
+
 }
 
 /**
@@ -282,12 +307,13 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderPartialFilling1v3) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, 1, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[2]), 6);
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[2], trade_events), 6);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
     ASSERT_EQ(mock_bids_[2].GetFilled(), mock_bids_[2].GetSize());
@@ -305,4 +331,18 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderPartialFilling1v3) {
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[1])));
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[2])));
+    // check trade events
+    ASSERT_EQ(trade_events->size(), 3);
+    // first trade
+    ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetSize(), 1);
+    // second trade
+    ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetSize(), 2);
+    // third trade
+    ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetSize(), 3);
 }

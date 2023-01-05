@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -9,6 +8,7 @@
 #include "instrument_symbol.h"
 #include "order_outcome_types.h"
 #include "trade_order.h"
+#include "trade_quotation_types.h"
 
 namespace matchmaker {
 
@@ -19,15 +19,29 @@ namespace matchmaker {
  */
 class SimplePriceBucket {
     private:
+        TradeQuotationType quotation_type_; 
         uint64_t price_; 
         uint64_t total_volume_; 
-        matchmaker::TradeOrder* order_list_head_;     
+        matchmaker::TradeOrder* order_list_head_;
+        matchmaker::TradeOrder* order_list_tail_;
+        std::unordered_map<std::string, matchmaker::TradeOrder*> tracked_orders_;     
     public:
-        SimplePriceBucket(uint64_t price);
+        SimplePriceBucket(TradeQuotationType quotation_type, uint64_t price);
+        TradeQuotationType GetQuotationType();
         uint64_t GetPrice();
         uint64_t GetTotalVolume();
         matchmaker::TradeOrder* GetFirstOrder();
-        // bool InsertOrder(matchmaker::TradeOrder& trade_order);
+        matchmaker::TradeOrder* GetLastOrder();
+        bool IsOrderInserted(const matchmaker::TradeOrder& trade_order);
+        /**
+         * @brief 
+         * 
+         * @param trade_order the object to be inserted
+         * @return true if inserted successfully.
+         * @return false if not inserted.
+         */
+        bool InsertOrder(matchmaker::TradeOrder& trade_order);
+        bool EraseOrder(matchmaker::TradeOrder& trade_order);
 };
 
 

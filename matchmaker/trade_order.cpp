@@ -1,14 +1,15 @@
 #include <stdint.h>
 
 #include <array>
+#include <string>
 
 #include "trade_order.h"
 
 namespace matchmaker {
 
 TradeOrder::TradeOrder(
-    std::array<uint8_t, 32> trade_id, 
-    std::array<uint8_t, 32> user_id,
+    std::array<uint8_t, 36> trade_id, 
+    std::array<uint8_t, 36> user_id,
     uint32_t instrument_symbol_id, 
     TradeOrderType order_type, 
     TradeQuotationType quotation_type, 
@@ -80,10 +81,13 @@ TradeOrder& TradeOrder::operator=(TradeOrder&& trade_order) {
     trade_order.SetNextOrder(nullptr);
     return *this;
 }
-std::array<uint8_t, 32> TradeOrder::GetTradeId() {
+std::array<uint8_t, 36> TradeOrder::GetTradeId() {
     return trade_id_;
 }
-std::array<uint8_t, 32> TradeOrder::GetUserId() {
+std::string TradeOrder::GetTradeIdAsString() const {
+    return std::string(std::begin(trade_id_), std::end(trade_id_));
+}
+std::array<uint8_t, 36> TradeOrder::GetUserId() {
     return user_id_;
 }
 uint32_t TradeOrder::GetInstrumentSymbolId() {

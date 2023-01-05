@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string>
 
 #include "order_outcome_types.h"
 #include "order_request_types.h"
@@ -15,8 +16,8 @@ namespace matchmaker {
  */
 class TradeOrder {
     private:
-        std::array<uint8_t, 32> trade_id_;
-        std::array<uint8_t, 32> user_id_; 
+        std::array<uint8_t, 36> trade_id_;
+        std::array<uint8_t, 36> user_id_; 
         uint32_t instrument_symbol_id_;
         TradeOrderType order_type_; 
         TradeQuotationType quotation_type_; 
@@ -29,8 +30,8 @@ class TradeOrder {
         TradeOrder* next_order_;
     public:
         TradeOrder(
-            std::array<uint8_t, 32> trade_id,
-            std::array<uint8_t, 32> user_id,
+            std::array<uint8_t, 36> trade_id,
+            std::array<uint8_t, 36> user_id,
             uint32_t instrument_symbol_id, 
             TradeOrderType order_type, 
             TradeQuotationType quotation_type, 
@@ -43,8 +44,9 @@ class TradeOrder {
         TradeOrder(TradeOrder& trade_order);
         TradeOrder(TradeOrder&& trade_order);
         TradeOrder& operator=(TradeOrder&& trade_order);
-        std::array<uint8_t, 32> GetTradeId();
-        std::array<uint8_t, 32> GetUserId();
+        std::array<uint8_t, 36> GetTradeId();
+        std::string GetTradeIdAsString() const;
+        std::array<uint8_t, 36> GetUserId();
         uint32_t GetInstrumentSymbolId();
         TradeOrderType GetOrderType();
         TradeQuotationType GetQuotationType();

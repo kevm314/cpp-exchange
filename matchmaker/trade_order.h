@@ -23,11 +23,12 @@ class TradeOrder {
         TradeQuotationType quotation_type_; 
         OrderRequestType request_type_; 
         OrderOutcomeType order_outcome_; 
-        uint64_t price_; 
-        uint64_t size_; 
+        uint64_t price_;
+        uint64_t size_;
         uint32_t timestamp_;
         TradeOrder* prev_order_;
         TradeOrder* next_order_;
+        uint64_t filled_;
     public:
         TradeOrder(
             std::array<uint8_t, 36> trade_id,
@@ -54,6 +55,8 @@ class TradeOrder {
         OrderOutcomeType GetOrderOutcome();
         uint64_t GetPrice();
         uint64_t GetSize();
+        uint64_t GetFilled();
+        bool SetFilled(uint64_t fill_amount);
         uint32_t GetTimestamp();
         TradeOrder* GetPrevOrder();
         void SetPrevOrder(TradeOrder* prev_order);

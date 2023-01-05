@@ -42,6 +42,7 @@ class SimplePriceBucket {
          */
         bool InsertOrder(matchmaker::TradeOrder& trade_order);
         bool EraseOrder(matchmaker::TradeOrder& trade_order);
+        uint64_t FulfillOrder(matchmaker::TradeOrder& requested_order);
 };
 
 

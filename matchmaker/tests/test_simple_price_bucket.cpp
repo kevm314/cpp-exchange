@@ -11,7 +11,7 @@
  * @brief Returns 3 mock bids to be used in testing (all at same price, but at different timestamps and volumes).
  * 
  */
-class MockBids : public ::testing::Test {
+class MockBids : virtual public ::testing::Test {
     private:
         std::array<uint8_t, 36> task_id;
         std::array<uint8_t, 36> user_id;
@@ -20,13 +20,10 @@ class MockBids : public ::testing::Test {
         TradeQuotationType trade_quotation_type = TradeQuotationType::BID;
         OrderRequestType order_request_type = OrderRequestType::PLACE_ORDER;
         OrderOutcomeType order_outcome_Type = OrderOutcomeType::NOT_PROCESSED;
-        
-    protected:
-        uint64_t price = 100;
         unsigned long int num_mocks_ = 3;
+    protected:
+        uint64_t bid_price = 100;
         std::vector<matchmaker::TradeOrder> mock_bids_;
-        
-        
         void SetUp() override {
             mock_bids_.reserve(num_mocks_);
             uint64_t size;
@@ -46,7 +43,7 @@ class MockBids : public ::testing::Test {
                     trade_quotation_type,
                     order_request_type,
                     order_outcome_Type,
-                    price,
+                    bid_price,
                     size,
                     timestamp
                 );
@@ -55,10 +52,60 @@ class MockBids : public ::testing::Test {
         }
 };
 
-
-class TestSimplePriceBucketMockOrders : public MockBids {
+/**
+ * @brief Returns 3 mock asks to be used in testing (all at same price, but at different timestamps and volumes).
+ * 
+ */
+class MockAsks : virtual public ::testing::Test {
+    private:
+        std::array<uint8_t, 36> task_id;
+        std::array<uint8_t, 36> user_id;
+        uint32_t instrument_symbol_id = 1;
+        TradeOrderType trade_order_type = TradeOrderType::GTC;
+        TradeQuotationType trade_quotation_type = TradeQuotationType::ASK;
+        OrderRequestType order_request_type = OrderRequestType::PLACE_ORDER;
+        OrderOutcomeType order_outcome_Type = OrderOutcomeType::NOT_PROCESSED;
+        unsigned long int num_mocks_ = 3;
+        std::array<uint64_t, 3> order_sizes = {1, 4, 7};
     protected:
-        // void SetUp() override {}
+        uint64_t ask_price = 100;
+        std::vector<matchmaker::TradeOrder> mock_asks_;
+        
+        
+        void SetUp() override {
+            mock_asks_.reserve(num_mocks_);
+            uint64_t size;
+            uint32_t timestamp;
+            
+            for (unsigned long int index = 0; index < num_mocks_; index++) {
+                std::fill(task_id.begin(), task_id.end(), index);
+                std::fill(user_id.begin(), user_id.end(), index);
+                size = order_sizes[index];
+                timestamp = index;
+
+                mock_asks_.emplace(mock_asks_.end(),
+                    task_id,
+                    user_id,
+                    instrument_symbol_id, 
+                    trade_order_type,
+                    trade_quotation_type,
+                    order_request_type,
+                    order_outcome_Type,
+                    ask_price,
+                    size,
+                    timestamp
+                );
+            }
+
+        }
+};
+
+class TestSimplePriceBucketMockOrders : public MockBids, public MockAsks {
+    protected:
+        void SetUp() override {
+            MockBids::SetUp();
+            MockAsks::SetUp();
+        }
         // void TearDown() override {}
 };
 
@@ -75,7 +122,7 @@ TEST(TestSimplePriceBucket, SimpleConstruction) {
  * 
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderInsertion) {
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
@@ -123,7 +170,7 @@ TEST_F(TestSimplePriceBucketMockOrders, BadOrderInsertion) {
  */
 TEST_F(TestSimplePriceBucketMockOrders, OrderDeletion) {
     // Set up price bucket and insert mock bids
-    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, price);
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
@@ -162,6 +209,91 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderDeletion) {
     ASSERT_TRUE(simple_pb.EraseOrder(mock_bids_[2]));
     ASSERT_EQ(
         simple_pb.GetTotalVolume(), 
+        0
+    );
+    ASSERT_EQ(mock_bids_[0].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[0].GetPrevOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[1].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[1].GetPrevOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[2].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[2].GetPrevOrder(), nullptr);
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[1])));
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[2])));
+}
+
+/**
+ * @brief Test for basic order filling (1 ask against 1 bid - 1 ask, 1 bid completely filled)
+ * 
+ */
+TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v1) {
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
+    // test simple ask order completely filled
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[0]), 1);
+    ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
+    // test remaining bid orders
+    ASSERT_EQ(
+        simple_pb.GetTotalVolume(),
+        mock_bids_[1].GetSize() + mock_bids_[2].GetSize()
+    );
+    ASSERT_EQ(mock_bids_[1].GetNextOrder(), &mock_bids_[2]);
+    ASSERT_EQ(mock_bids_[2].GetPrevOrder(), &mock_bids_[1]);
+    ASSERT_EQ(mock_bids_[0].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[0].GetPrevOrder(), nullptr);
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
+    ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[1])));
+    ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[2])));
+}
+
+/**
+ * @brief Test for order filling (1 ask against 3 bids - 1 ask, 2 bids completely filled, 1 bid partially filled)
+ * 
+ */
+TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
+    // test simple ask order completely filled
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[1]), 4);
+    ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
+    ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
+    // test remaining bid orders
+    ASSERT_EQ(
+        simple_pb.GetTotalVolume(),
+        mock_bids_[2].GetSize() - 1
+    );
+    ASSERT_EQ(mock_bids_[0].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[0].GetPrevOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[1].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[1].GetPrevOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[2].GetNextOrder(), nullptr);
+    ASSERT_EQ(mock_bids_[2].GetPrevOrder(), nullptr);
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[0])));
+    ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[1])));
+    ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[2])));
+}
+
+/**
+ * @brief Test for order filling (1 ask against 3 bids - 3 bids completely filled, 1 ask partially filled)
+ * 
+ */
+TEST_F(TestSimplePriceBucketMockOrders, OrderPartialFilling1v3) {
+    matchmaker::SimplePriceBucket simple_pb = matchmaker::SimplePriceBucket(TradeQuotationType::BID, bid_price);
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[0]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
+    ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
+    // test simple ask order completely filled
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[2]), 6);
+    ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
+    ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
+    ASSERT_EQ(mock_bids_[2].GetFilled(), mock_bids_[2].GetSize());
+    // test remaining bid orders
+    ASSERT_EQ(
+        simple_pb.GetTotalVolume(),
         0
     );
     ASSERT_EQ(mock_bids_[0].GetNextOrder(), nullptr);

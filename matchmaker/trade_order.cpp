@@ -32,6 +32,7 @@ TradeOrder::TradeOrder(
 {
     prev_order_ = nullptr;
     next_order_ = nullptr;
+    filled_ = 0;
 }
 TradeOrder::TradeOrder(TradeOrder& trade_order):
     trade_id_(trade_order.GetTradeId()),
@@ -45,7 +46,8 @@ TradeOrder::TradeOrder(TradeOrder& trade_order):
     size_(trade_order.GetSize()), 
     timestamp_(trade_order.GetTimestamp()),
     prev_order_(trade_order.GetPrevOrder()),
-    next_order_(trade_order.GetNextOrder())
+    next_order_(trade_order.GetNextOrder()),
+    filled_(trade_order.GetFilled())
 {}
 TradeOrder::TradeOrder(TradeOrder&& trade_order):
     trade_id_(trade_order.GetTradeId()),
@@ -63,6 +65,7 @@ TradeOrder::TradeOrder(TradeOrder&& trade_order):
 {
     trade_order.SetPrevOrder(nullptr);
     trade_order.SetNextOrder(nullptr);
+    trade_order.SetFilled(0);
 }
 TradeOrder& TradeOrder::operator=(TradeOrder&& trade_order) {
     trade_id_ = trade_order.GetTradeId();
@@ -79,6 +82,7 @@ TradeOrder& TradeOrder::operator=(TradeOrder&& trade_order) {
     next_order_ = trade_order.GetNextOrder();
     trade_order.SetPrevOrder(nullptr);
     trade_order.SetNextOrder(nullptr);
+    trade_order.SetFilled(0);
     return *this;
 }
 std::array<uint8_t, 36> TradeOrder::GetTradeId() {
@@ -110,6 +114,15 @@ uint64_t TradeOrder::GetPrice() {
 }
 uint64_t TradeOrder::GetSize() {
     return size_;
+}
+uint64_t TradeOrder::GetFilled() {
+    return filled_;
+}
+bool TradeOrder::SetFilled(uint64_t fill_amount) {
+    if (fill_amount > size_ || fill_amount < 0)
+        return false;
+    filled_ = fill_amount;
+    return true;
 }
 uint32_t TradeOrder::GetTimestamp() {
     return timestamp_;

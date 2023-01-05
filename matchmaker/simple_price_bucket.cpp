@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include <algorithm>
 #include <array>
 #include <vector>
 
@@ -63,7 +64,7 @@ bool SimplePriceBucket::InsertOrder(matchmaker::TradeOrder& trade_order) {
         order_list_tail_ = &trade_order;
         trade_order.SetNextOrder(nullptr);
     }
-    total_volume_ += trade_order.GetSize();
+    total_volume_ += (trade_order.GetSize() - trade_order.GetFilled());
     // add order to tracked map
     tracked_orders_[trade_id] = &trade_order;
     return true;
@@ -74,8 +75,8 @@ bool SimplePriceBucket::EraseOrder(matchmaker::TradeOrder& trade_order) {
     if (!tracked_orders_.contains(trade_id)) {
         return false;
     }
-    // reduce volume
-    total_volume_ -= trade_order.GetSize();
+    // reduce by available volume
+    total_volume_ -= (trade_order.GetSize() - trade_order.GetFilled());
     // TODO: manage abnormal scenario
     if (total_volume_ < 0) {
         spdlog::critical("Simple price bucket has negative volume, adjusting to 0");
@@ -103,5 +104,40 @@ bool SimplePriceBucket::EraseOrder(matchmaker::TradeOrder& trade_order) {
     // remove from map
     tracked_orders_.erase(trade_id);
     return true;
+}
+uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order) {
+    const TradeQuotationType opposite_quote_needed = quotation_type_ == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
+    // check if 0 orders in bucket or other invalid reasons
+    if (tracked_orders_.size() == 0 || requested_order.GetQuotationType() != opposite_quote_needed || requested_order.GetPrice() != price_ || requested_order.GetSize() == 0)
+        return 0;
+    // iterate through the orders to try and match the volume in FIFO manner
+    TradeOrder* candidate_order = order_list_head_;
+    TradeOrder* candidate_to_delete = candidate_order;
+    uint64_t candidate_fulfilled_volume = 0;
+    while (candidate_order != nullptr) {
+        // check available volume
+        // if sufficient volume perform trade (generate trade event)
+        candidate_fulfilled_volume = std::min(candidate_order->GetSize() - candidate_order->GetFilled(), requested_order.GetSize() - requested_order.GetFilled());
+        // update filled volumes
+        candidate_order->SetFilled(candidate_order->GetFilled() + candidate_fulfilled_volume);
+        requested_order.SetFilled(requested_order.GetFilled() + candidate_fulfilled_volume);
+        total_volume_ -= candidate_fulfilled_volume;
+        if (candidate_fulfilled_volume != 0) {
+            int i = 0;
+            // TODO: generate TradeEvent
+        }
+        // move to next candidate order and check if any orders filled
+        candidate_to_delete = candidate_order;
+        candidate_order = candidate_order->GetNextOrder();
+        if (candidate_to_delete->GetFilled() == candidate_to_delete->GetSize()) {
+            EraseOrder(*candidate_to_delete);
+        }
+        // check if requested order is completely filled
+        if (requested_order.GetFilled() == requested_order.GetSize()) {
+            return requested_order.GetFilled();
+        }
+    }
+    // requested order is only partially matched
+    return requested_order.GetFilled();
 }
 }

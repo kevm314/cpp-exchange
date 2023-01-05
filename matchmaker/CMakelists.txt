@@ -18,6 +18,7 @@ set(
     instrument_symbol.cpp
     simple_order_book.cpp
     simple_price_bucket.cpp
+    trade_event.cpp
     trade_order.cpp
 )
 set(

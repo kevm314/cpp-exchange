@@ -151,10 +151,12 @@ uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order
         candidate_to_delete = candidate_order;
         candidate_order = candidate_order->GetNextOrder();
         if (candidate_to_delete->GetFilled() == candidate_to_delete->GetSize()) {
+            candidate_to_delete->SetOrderOutcome(OrderOutcomeType::SUCCESS);
             EraseOrder(*candidate_to_delete);
         }
         // check if requested order is completely filled
         if (requested_order.GetFilled() == requested_order.GetSize()) {
+            requested_order.SetOrderOutcome(OrderOutcomeType::SUCCESS);
             return requested_order.GetFilled();
         }
     }

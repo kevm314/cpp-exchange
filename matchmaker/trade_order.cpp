@@ -109,6 +109,9 @@ OrderRequestType TradeOrder::GetRequestType() {
 OrderOutcomeType TradeOrder::GetOrderOutcome() {
     return order_outcome_;
 }
+void TradeOrder::SetOrderOutcome(OrderOutcomeType outcome) {
+    order_outcome_ = outcome;
+}
 uint64_t TradeOrder::GetPrice() {
     return price_;
 }

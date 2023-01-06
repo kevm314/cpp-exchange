@@ -21,13 +21,13 @@ class BaseOrderBook {
             matchmaker::InstrumentSymbol instrument_symbol
         );
         matchmaker::InstrumentSymbol GetInstrumentSymbol();
-        virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder trade_order);
+        virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order);
         // execute new order
-        virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder trade_order);
-        virtual OrderOutcomeType CancelOrder(matchmaker::TradeOrder trade_order);
+        virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order);
+        virtual OrderOutcomeType CancelOrder(matchmaker::TradeOrder& trade_order);
         // Decrease size by lots amount
-        virtual OrderOutcomeType ReduceOrderSize(matchmaker::TradeOrder trade_order);
-        virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder trade_order);
+        virtual OrderOutcomeType ReduceOrderSize(matchmaker::TradeOrder& trade_order);
+        virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder& trade_order);
         virtual std::vector<matchmaker::TradeOrder> GetUserOrders(const std::array<uint8_t, 32>& user_id);
 };
 

@@ -53,6 +53,7 @@ class TradeOrder {
         TradeQuotationType GetQuotationType();
         OrderRequestType GetRequestType();
         OrderOutcomeType GetOrderOutcome();
+        void SetOrderOutcome(OrderOutcomeType outcome);
         uint64_t GetPrice();
         uint64_t GetSize();
         uint64_t GetFilled();

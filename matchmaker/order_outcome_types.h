@@ -7,5 +7,7 @@
 enum OrderOutcomeType {
     NOT_PROCESSED,
     SUCCESS,
-    FAIL
+    FAIL,
+    INVALID_SYMBOL_OR_SIZE,
+    INSUFFICIENT_LIQUIDITY
 };

@@ -110,8 +110,8 @@ class MockAsks : virtual public ::testing::Test {
             uint32_t timestamp;
             
             for (unsigned long int index = 0; index < num_mocks_; index++) {
-                std::fill(task_id.begin(), task_id.end(), index);
-                std::fill(user_id.begin(), user_id.end(), index);
+                std::fill(task_id.begin(), task_id.end(), index * 4);
+                std::fill(user_id.begin(), user_id.end(), index * 4);
                 size = order_sizes[index];
                 timestamp = index;
 
@@ -141,11 +141,6 @@ class TestSimpleOrderBookMockOrders : public TestSimpleOrderBook, public MockBid
         }
         // void TearDown() override {}
 };
-
-// TEST_F(TestSimpleOrderBookMockOrders, PlaceGtc) {
-//     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
-//     ASSERT_EQ(1, 0);
-// }
 
 
 /**
@@ -234,4 +229,49 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQueryingNoBuckets) {
     ASSERT_FALSE(price_buckets.IsIteratorValid());
     // iterator still invalid after final increment
     ASSERT_FALSE(price_buckets.IncrementToNextBestPrice());
+}
+
+/**
+ * @brief Mock GTC order scenarios, 2 bids, then 1 ask, then 1 bid
+ * 
+ */
+TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
+    // TradeQuotationType ask_counter_quote = TradeQuotationType::BID;
+    // TradeQuotationType bid_counter_quote = TradeQuotationType::ASK;
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    // first bid
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ((*trade_events).size(), 0);
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // second bid
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[1], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ((*trade_events).size(), 0);
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[1].GetTradeIdAsString()));
+    // first ask (2 bids completely filled hence 2 trade events of respective volume 1, 2)
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_asks_[1], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ((*trade_events).size(), 2);
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_[1].GetTradeIdAsString()));
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_asks_[1].GetTradeIdAsString()));
+    ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetSize(), 1);
+    ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[1].GetSize(), 2);
+    ASSERT_TRUE(mock_bids_[0].GetFilled() == mock_bids_[0].GetSize());
+    ASSERT_TRUE(mock_bids_[1].GetFilled() == mock_bids_[1].GetSize());
+    ASSERT_EQ(mock_asks_[1].GetFilled(), 3);
+    // third bid (1 trade event of volume 1)
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[2], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ((*trade_events).size(), 3);
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[2].GetTradeIdAsString()));
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_asks_[1].GetTradeIdAsString()));
+    ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ((*trade_events)[2].GetSize(), 1);
+    ASSERT_TRUE(mock_asks_[1].GetFilled() == mock_asks_[1].GetSize());
+    ASSERT_EQ(mock_bids_[2].GetFilled(), 1);
 }

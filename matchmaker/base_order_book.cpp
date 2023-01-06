@@ -1,10 +1,12 @@
 #include <stdint.h>
 
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "base_order_book.h"
 #include "instrument_symbol.h"
+#include "trade_event.h"
 
 namespace matchmaker {
 
@@ -19,7 +21,7 @@ matchmaker::InstrumentSymbol BaseOrderBook::GetInstrumentSymbol() {
 OrderOutcomeType BaseOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order) {
     return OrderOutcomeType::FAIL;
 }
-OrderOutcomeType BaseOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_order) {
+OrderOutcomeType BaseOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 } 
 OrderOutcomeType BaseOrderBook::CancelOrder(matchmaker::TradeOrder& trade_order) {

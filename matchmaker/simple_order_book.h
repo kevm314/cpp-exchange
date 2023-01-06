@@ -41,9 +41,9 @@ class SimpleOrderBook: public BaseOrderBook {
         // TODO: update -> Bid/ask prices stored as (price -> orders bucket), and then in a bucket (order id -> order object)
         std::map<uint64_t, SimplePriceBucket> bid_prices_ = {};
         std::map<uint64_t, SimplePriceBucket> ask_prices_ = {};
-        std::unordered_map<TradeQuotationType, std::map<uint64_t, SimplePriceBucket>> quoted_prices_ = {
-            {TradeQuotationType::BID, bid_prices_},
-            {TradeQuotationType::ASK, ask_prices_}
+        std::unordered_map<TradeQuotationType, std::map<uint64_t, SimplePriceBucket>*> quoted_prices_ = {
+            {TradeQuotationType::BID, &bid_prices_},
+            {TradeQuotationType::ASK, &ask_prices_}
         };
         std::unique_ptr<std::unordered_map<std::string, matchmaker::TradeOrder>> orderbook_orders_ = std::make_unique<std::unordered_map<std::string, matchmaker::TradeOrder>>();
     public:
@@ -51,7 +51,7 @@ class SimpleOrderBook: public BaseOrderBook {
             matchmaker::InstrumentSymbol instrument_symbol
         );
         virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order) override;
-        virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order) override;
+        virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         OrderOutcomeType ProcessGtcOrder(
             matchmaker::TradeOrder& trade_order,
             TradeQuotationType counter_quote,
@@ -62,6 +62,7 @@ class SimpleOrderBook: public BaseOrderBook {
         // virtual OrderOutcomeType ReduceOrderSize(matchmaker::TradeOrder& trade_order) override;
         // virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder& trade_order) override;
         // virtual std::vector<matchmaker::TradeOrder> GetUserOrders(const std::array<uint8_t, 32>& user_id) override;
+        bool DoesTradeExist(std::string trade_id);
         bool IsValidSymbolAndSize(matchmaker::TradeOrder& trade_order);
         PriceBucketsIterator GetCandidatePriceBuckets(uint64_t price, TradeQuotationType counter_quote);
         /**

@@ -43,7 +43,7 @@ TEST_F(TestSimpleOrderBook, SimpleConstruction) {
  * @brief Returns 3 mock bids to be used in testing (all at same price, but at different timestamps and volumes).
  * 
  */
-class MockBids : virtual public ::testing::Test {
+class MockBidsOb : virtual public ::testing::Test {
     private:
         std::array<uint8_t, 36> task_id;
         std::array<uint8_t, 36> user_id;
@@ -53,6 +53,7 @@ class MockBids : virtual public ::testing::Test {
         OrderRequestType order_request_type = OrderRequestType::PLACE_ORDER;
         OrderOutcomeType order_outcome_Type = OrderOutcomeType::NOT_PROCESSED;
         unsigned long int num_mocks_ = 3;
+        std::array<uint64_t, 3> order_sizes = {1, 2, 3};
     protected:
         uint64_t bid_price = 100;
         std::vector<matchmaker::TradeOrder> mock_bids_;
@@ -64,7 +65,7 @@ class MockBids : virtual public ::testing::Test {
             for (unsigned long int index = 0; index < num_mocks_; index++) {
                 std::fill(task_id.begin(), task_id.end(), index);
                 std::fill(user_id.begin(), user_id.end(), index);
-                size = index + 1;
+                size = order_sizes[index];
                 timestamp = index;
 
                 mock_bids_.emplace(mock_bids_.end(),
@@ -84,11 +85,58 @@ class MockBids : virtual public ::testing::Test {
         }
 };
 
+
+/**
+ * @brief Returns 3 mock Ioc bids to be used in testing (all at same price, but at different timestamps and volumes).
+ * 
+ */
+class MockBidsIocOb : virtual public ::testing::Test {
+    private:
+        std::array<uint8_t, 36> task_id;
+        std::array<uint8_t, 36> user_id;
+        uint32_t instrument_symbol_id = 1;
+        TradeOrderType trade_order_type = TradeOrderType::IOC;
+        TradeQuotationType trade_quotation_type = TradeQuotationType::BID;
+        OrderRequestType order_request_type = OrderRequestType::PLACE_ORDER;
+        OrderOutcomeType order_outcome_Type = OrderOutcomeType::NOT_PROCESSED;
+        unsigned long int num_mocks_ = 3;
+        std::array<uint64_t, 3> order_sizes = {3, 4, 7};
+    protected:
+        uint64_t bid_ioc_price = 100;
+        std::vector<matchmaker::TradeOrder> mock_bids_ioc_;
+        void SetUp() override {
+            mock_bids_ioc_.reserve(num_mocks_);
+            uint64_t size;
+            uint32_t timestamp;
+            
+            for (unsigned long int index = 0; index < num_mocks_; index++) {
+                std::fill(task_id.begin(), task_id.end(), index + 100);
+                std::fill(user_id.begin(), user_id.end(), index + 100);
+                size = order_sizes[index];
+                timestamp = index;
+
+                mock_bids_ioc_.emplace(mock_bids_ioc_.end(),
+                    task_id,
+                    user_id,
+                    instrument_symbol_id, 
+                    trade_order_type,
+                    trade_quotation_type,
+                    order_request_type,
+                    order_outcome_Type,
+                    bid_ioc_price,
+                    size,
+                    timestamp
+                );
+            }
+
+        }
+};
+
 /**
  * @brief Returns 3 mock asks to be used in testing (all at same price, but at different timestamps and volumes).
  * 
  */
-class MockAsks : virtual public ::testing::Test {
+class MockAsksOb : virtual public ::testing::Test {
     private:
         std::array<uint8_t, 36> task_id;
         std::array<uint8_t, 36> user_id;
@@ -132,12 +180,13 @@ class MockAsks : virtual public ::testing::Test {
         }
 };
 
-class TestSimpleOrderBookMockOrders : public TestSimpleOrderBook, public MockBids, public MockAsks {
+class TestSimpleOrderBookMockOrders : public TestSimpleOrderBook, public MockBidsOb, public MockAsksOb, public MockBidsIocOb {
     protected:
         void SetUp() override {
             TestSimpleOrderBook::SetUp();
-            MockBids::SetUp();
-            MockAsks::SetUp();
+            MockBidsOb::SetUp();
+            MockBidsIocOb::SetUp();
+            MockAsksOb::SetUp();
         }
         // void TearDown() override {}
 };
@@ -236,8 +285,6 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQueryingNoBuckets) {
  * 
  */
 TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
-    // TradeQuotationType ask_counter_quote = TradeQuotationType::BID;
-    // TradeQuotationType bid_counter_quote = TradeQuotationType::ASK;
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // first bid
@@ -274,4 +321,27 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
     ASSERT_EQ((*trade_events)[2].GetSize(), 1);
     ASSERT_TRUE(mock_asks_[1].GetFilled() == mock_asks_[1].GetSize());
     ASSERT_EQ(mock_bids_[2].GetFilled(), 1);
+}
+
+/**
+ * @brief Mock IOC and GTC order scenarios, 1 GTC Ask, then 1 IOC Bid
+ * 
+ */
+TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcIoc) {
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    // first GTC ask
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_asks_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ((*trade_events).size(), 0);
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_asks_[0].GetTradeIdAsString()));
+    // second IOC bid
+    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_ioc_[0], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ((*trade_events).size(), 1);
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_asks_[0].GetTradeIdAsString()));
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_ioc_[0].GetTradeIdAsString()));
+    ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_ioc_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[0].GetTradeId());
+    ASSERT_EQ((*trade_events)[0].GetSize(), 1);
+    ASSERT_TRUE(mock_asks_[0].GetFilled() == mock_asks_[0].GetSize());
+    ASSERT_EQ(mock_bids_ioc_[0].GetFilled(), 1);
 }

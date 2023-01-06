@@ -58,6 +58,12 @@ class SimpleOrderBook: public BaseOrderBook {
             PriceBucketsIterator& price_buckets,
             std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
         );
+        OrderOutcomeType ProcessIocOrder(
+            matchmaker::TradeOrder& trade_order,
+            TradeQuotationType counter_quote,
+            PriceBucketsIterator& price_buckets,
+            std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
+        );
         // virtual OrderOutcomeType CancelOrder(matchmaker::TradeOrder& trade_order) override;
         // virtual OrderOutcomeType ReduceOrderSize(matchmaker::TradeOrder& trade_order) override;
         // virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder& trade_order) override;

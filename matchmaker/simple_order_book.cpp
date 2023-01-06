@@ -129,22 +129,17 @@ OrderOutcomeType SimpleOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_
     TradeQuotationType counter_quote = trade_order.GetQuotationType() == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
     // check if price bucket exists
     PriceBucketsIterator buckets_found = GetCandidatePriceBuckets(trade_order.GetPrice(), counter_quote);
-    
-
-    // TODO: move to sub method calls
-    // if (!buckets_found.IsIteratorValid() && (trade_order.GetOrderType() == TradeOrderType::FOK || trade_order.GetOrderType() == TradeOrderType::IOC))
-    //     return OrderOutcomeType::INSUFFICIENT_LIQUIDITY;
-    // TODO: finish rest of this method
-
     // funnel to correct order type
     switch(trade_order.GetOrderType()) {
         case TradeOrderType::GTC:
             return ProcessGtcOrder(trade_order, counter_quote, buckets_found, trade_events);
+        case TradeOrderType::IOC:
+            return ProcessIocOrder(trade_order, counter_quote, buckets_found, trade_events);
         default:
             spdlog::critical("Unsupported trade order type submitted for trade id: " + trade_order.GetTradeIdAsString());
             return OrderOutcomeType::FAIL;
     };
-    return OrderOutcomeType::SUCCESS;
+    return OrderOutcomeType::FAIL;
 }
 OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(
     matchmaker::TradeOrder& trade_order,
@@ -165,6 +160,14 @@ OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(
         return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
     price_bucket->second.InsertOrder(trade_order);
     return order_outcome;
+}
+OrderOutcomeType SimpleOrderBook::ProcessIocOrder(
+    matchmaker::TradeOrder& trade_order,
+    TradeQuotationType counter_quote,
+    PriceBucketsIterator& price_buckets,
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
+) {
+    return IterativelyFulfillOrder(trade_order, counter_quote, price_buckets, trade_events);
 }
 OrderOutcomeType SimpleOrderBook::IterativelyFulfillOrder(
     matchmaker::TradeOrder& trade_order,

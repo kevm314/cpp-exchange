@@ -8,6 +8,7 @@
 #include "base_order_book.h"
 #include "instrument_symbol.h"
 #include "simple_order_book.h"
+#include "trade_event.h"
 
 namespace matchmaker {
 
@@ -84,12 +85,17 @@ PriceBucketsIterator SimpleOrderBook::GetCandidatePriceBuckets(uint64_t price, T
         return PriceBucketsIterator(&ask_prices_, counter_quote, price);
     }
 }
-void SimpleOrderBook::CreatePriceBucket(uint64_t price, TradeQuotationType counter_quote) {
+bool SimpleOrderBook::CreatePriceBucket(uint64_t price, TradeQuotationType counter_quote) {
     if (counter_quote == TradeQuotationType::BID) {
+        if (bid_prices_.contains(price))
+            return false;
         bid_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price)));
     } else {
+        if (ask_prices_.contains(price))
+            return false;
         ask_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price)));
     }
+    return true;
 }
 uint64_t SimpleOrderBook::GetNumberBuckets(TradeQuotationType counter_quote) {
     if (counter_quote == TradeQuotationType::BID) {
@@ -99,14 +105,8 @@ uint64_t SimpleOrderBook::GetNumberBuckets(TradeQuotationType counter_quote) {
     }
     return 0;
 }
-std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator SimpleOrderBook::GetEndOfBuckets(TradeQuotationType counter_quote) {
-    if (counter_quote == TradeQuotationType::BID) {
-        return bid_prices_.end();
-    } else {
-        return ask_prices_.end();
-    }
-}
 OrderOutcomeType SimpleOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order) {
+    // TODO: consume a generic order book task which is funnelled below (need a way of storing a generic TradeTask message (passed in via TaskProducer + ringbuffer))
     // TODO: update here
     switch(trade_order.GetRequestType()) {
         case OrderRequestType::PLACE_ORDER:
@@ -124,26 +124,70 @@ OrderOutcomeType SimpleOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_
     TradeQuotationType counter_quote = trade_order.GetQuotationType() == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
     // check if price bucket exists
     PriceBucketsIterator buckets_found = GetCandidatePriceBuckets(trade_order.GetPrice(), counter_quote);
-    if (!buckets_found.IsIteratorValid() && (trade_order.GetOrderType() == TradeOrderType::FOK || trade_order.GetOrderType() == TradeOrderType::IOC))
-        return OrderOutcomeType::INSUFFICIENT_LIQUIDITY;
+    
+
+    // TODO: move to sub method calls
+    // if (!buckets_found.IsIteratorValid() && (trade_order.GetOrderType() == TradeOrderType::FOK || trade_order.GetOrderType() == TradeOrderType::IOC))
+    //     return OrderOutcomeType::INSUFFICIENT_LIQUIDITY;
     // TODO: finish rest of this method
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+
     // funnel to correct order type
     switch(trade_order.GetOrderType()) {
         case TradeOrderType::GTC:
-            break;
+            return ProcessGtcOrder(trade_order, counter_quote, buckets_found, trade_events);
         default:
             spdlog::critical("Unsupported trade order type submitted for trade id: " + trade_order.GetTradeIdAsString());
             return OrderOutcomeType::FAIL;
     };
     return OrderOutcomeType::SUCCESS;
 }
-OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(matchmaker::TradeOrder& trade_order) {
-    
-    // check quotation type to send to correct price bucket
-    // GetPriceBucket()
-    // TODO: create a new price bucket (only when needing to place new order into requested quote price buckets)
-    // CreatePriceBucket(trade_order.GetPrice(), counter_quote);
-    
-    return OrderOutcomeType::SUCCESS;
+OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(
+    matchmaker::TradeOrder& trade_order,
+    TradeQuotationType counter_quote,
+    PriceBucketsIterator& price_buckets,
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
+) {
+    OrderOutcomeType order_outcome = IterativelyFulfillOrder(trade_order, counter_quote, price_buckets, trade_events);
+    // check if requested order has been fulfilled
+    if (order_outcome == OrderOutcomeType::ORDER_COMPLETELY_FILLED)
+        return order_outcome;
+    // add new order into map for tracking by the orderbook
+    (*orderbook_orders_).emplace(std::make_pair(trade_order.GetTradeIdAsString(), trade_order));
+    // create a new price bucket (only when needing to place new order into requested quote price buckets)
+    CreatePriceBucket(trade_order.GetPrice(), trade_order.GetQuotationType());
+    std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = quoted_prices_[trade_order.GetQuotationType()].find(trade_order.GetPrice());
+    if (price_bucket == quoted_prices_[trade_order.GetQuotationType()].end())
+        return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
+    price_bucket->second.InsertOrder(trade_order);
+    return order_outcome;
 }
+OrderOutcomeType SimpleOrderBook::IterativelyFulfillOrder(
+    matchmaker::TradeOrder& trade_order,
+    TradeQuotationType counter_quote,
+    PriceBucketsIterator& price_buckets,
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
+) {
+    // iterate through the price buckets
+    while (price_buckets.IsIteratorValid()) {
+        // call fulfill order for current bucket and accumulate trade events
+        // accumulate list of trade orders to delete from order book map
+        std::vector<std::string> trades_to_remove;
+        price_buckets.GetCurrentBucket().FulfillOrder(trade_order, trade_events, trades_to_remove);
+        for (auto trade_id : trades_to_remove)
+            orderbook_orders_->erase(trade_id);
+        // increment price bucket and check if recently processed bucket can be removed
+        SimplePriceBucket* bucket_deletion_check = &price_buckets.GetCurrentBucket();
+        price_buckets.IncrementToNextBestPrice();
+        if (bucket_deletion_check->GetNumOrders() == 0)
+            quoted_prices_[counter_quote].erase(bucket_deletion_check->GetPrice());
+        // check if requested order has been filled to exit early
+        if (trade_order.GetFilled() == trade_order.GetSize())
+            return OrderOutcomeType::ORDER_COMPLETELY_FILLED; 
+    }
+    if (trade_order.GetFilled() == 0)
+        return OrderOutcomeType::ORDER_NOT_FILLED;
+    return OrderOutcomeType::ORDER_PARTIALLY_FILLED;
+}
+
 }

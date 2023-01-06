@@ -234,8 +234,9 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v1) {
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
+    std::vector<std::string> trades_to_remove;
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[0], trade_events), 1);
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[0], trade_events, trades_to_remove), 1);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     // test remaining bid orders
     ASSERT_EQ(
@@ -252,8 +253,10 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v1) {
     // check trade events
     // first trade
     ASSERT_EQ(trade_events->size(), 1);
+    ASSERT_EQ(trades_to_remove.size(), 1);
     ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
     ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[0].GetTradeId());
+    ASSERT_EQ(trades_to_remove[0], mock_bids_[0].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[0].GetSize(), 1);
 } 
 
@@ -267,8 +270,9 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
+    std::vector<std::string> trades_to_remove;
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[1], trade_events), 4);
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[1], trade_events, trades_to_remove), 4);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
     // test remaining bid orders
@@ -287,13 +291,16 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderFilling1v3) {
     ASSERT_TRUE((simple_pb.IsOrderInserted(mock_bids_[2])));
     // check trade events
     ASSERT_EQ(trade_events->size(), 3);
+    ASSERT_EQ(trades_to_remove.size(), 2);
     // first trade
     ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
     ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ(trades_to_remove[0], mock_bids_[0].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[0].GetSize(), 1);
     // second trade
     ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
     ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[1].GetTradeId());
+    ASSERT_EQ(trades_to_remove[1], mock_bids_[1].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[1].GetSize(), 2);
     // third trade
     ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
@@ -312,8 +319,9 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderPartialFilling1v3) {
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[1]));
     ASSERT_TRUE(simple_pb.InsertOrder(mock_bids_[2]));
     // test simple ask order completely filled
+    std::vector<std::string> trades_to_remove;
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[2], trade_events), 6);
+    ASSERT_EQ(simple_pb.FulfillOrder(mock_asks_[2], trade_events, trades_to_remove), 6);
     ASSERT_EQ(mock_bids_[0].GetFilled(), mock_bids_[0].GetSize());
     ASSERT_EQ(mock_bids_[1].GetFilled(), mock_bids_[1].GetSize());
     ASSERT_EQ(mock_bids_[2].GetFilled(), mock_bids_[2].GetSize());
@@ -333,16 +341,20 @@ TEST_F(TestSimplePriceBucketMockOrders, OrderPartialFilling1v3) {
     ASSERT_FALSE((simple_pb.IsOrderInserted(mock_bids_[2])));
     // check trade events
     ASSERT_EQ(trade_events->size(), 3);
+    ASSERT_EQ(trades_to_remove.size(), 3);
     // first trade
     ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_[0].GetTradeId());
     ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ(trades_to_remove[0], mock_bids_[0].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[0].GetSize(), 1);
     // second trade
     ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
     ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ(trades_to_remove[1], mock_bids_[1].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[1].GetSize(), 2);
     // third trade
     ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
     ASSERT_EQ((*trade_events)[2].GetAskTradeId(), mock_asks_[2].GetTradeId());
+    ASSERT_EQ(trades_to_remove[2], mock_bids_[2].GetTradeIdAsString());
     ASSERT_EQ((*trade_events)[2].GetSize(), 3);
 }

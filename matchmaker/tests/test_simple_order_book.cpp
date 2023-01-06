@@ -156,10 +156,10 @@ TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQuerying) {
     TradeQuotationType counter_quote = TradeQuotationType::BID;
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // create 4 price buckets
-    simple_ob.CreatePriceBucket(1, counter_quote);
-    simple_ob.CreatePriceBucket(2, counter_quote);
-    simple_ob.CreatePriceBucket(4, counter_quote);
-    simple_ob.CreatePriceBucket(5, counter_quote);
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(1, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(2, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(4, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(5, counter_quote));
     ASSERT_EQ(simple_ob.GetNumberBuckets(counter_quote), 4);
     matchmaker::PriceBucketsIterator price_buckets = simple_ob.GetCandidatePriceBuckets(3, counter_quote);
     // price buckets 5 then 4
@@ -181,10 +181,10 @@ TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQueryingNoBuckets) {
     TradeQuotationType counter_quote = TradeQuotationType::BID;
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // create 4 price buckets
-    simple_ob.CreatePriceBucket(10, counter_quote);
-    simple_ob.CreatePriceBucket(20, counter_quote);
-    simple_ob.CreatePriceBucket(40, counter_quote);
-    simple_ob.CreatePriceBucket(50, counter_quote);
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(10, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(20, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(40, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(50, counter_quote));
     ASSERT_EQ(simple_ob.GetNumberBuckets(counter_quote), 4);
     matchmaker::PriceBucketsIterator price_buckets = simple_ob.GetCandidatePriceBuckets(60, counter_quote);
     ASSERT_FALSE(price_buckets.IsIteratorValid());
@@ -200,10 +200,10 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQuerying) {
     TradeQuotationType counter_quote = TradeQuotationType::ASK;
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // create 4 price buckets
-    simple_ob.CreatePriceBucket(1, counter_quote);
-    simple_ob.CreatePriceBucket(2, counter_quote);
-    simple_ob.CreatePriceBucket(4, counter_quote);
-    simple_ob.CreatePriceBucket(5, counter_quote);
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(1, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(2, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(4, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(5, counter_quote));
     ASSERT_EQ(simple_ob.GetNumberBuckets(counter_quote), 4);
     matchmaker::PriceBucketsIterator price_buckets = simple_ob.GetCandidatePriceBuckets(3, counter_quote);
     // price buckets 1 then 2
@@ -225,10 +225,10 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQueryingNoBuckets) {
     TradeQuotationType counter_quote = TradeQuotationType::ASK;
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // create 4 price buckets
-    simple_ob.CreatePriceBucket(10, counter_quote);
-    simple_ob.CreatePriceBucket(20, counter_quote);
-    simple_ob.CreatePriceBucket(40, counter_quote);
-    simple_ob.CreatePriceBucket(50, counter_quote);
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(10, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(20, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(40, counter_quote));
+    ASSERT_TRUE(simple_ob.CreatePriceBucket(50, counter_quote));
     ASSERT_EQ(simple_ob.GetNumberBuckets(counter_quote), 4);
     matchmaker::PriceBucketsIterator price_buckets = simple_ob.GetCandidatePriceBuckets(3, counter_quote);
     ASSERT_FALSE(price_buckets.IsIteratorValid());

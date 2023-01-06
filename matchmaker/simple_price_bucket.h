@@ -34,6 +34,7 @@ class SimplePriceBucket {
         uint32_t GetInstrumentSymbolId();
         uint64_t GetPrice();
         uint64_t GetTotalVolume();
+        uint64_t GetNumOrders();
         matchmaker::TradeOrder* GetFirstOrder();
         matchmaker::TradeOrder* GetLastOrder();
         bool IsOrderInserted(const matchmaker::TradeOrder& trade_order);
@@ -46,7 +47,7 @@ class SimplePriceBucket {
          */
         bool InsertOrder(matchmaker::TradeOrder& trade_order);
         bool EraseOrder(matchmaker::TradeOrder& trade_order);
-        uint64_t FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>>& trade_events);
+        uint64_t FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events, std::vector<std::string>& trades_to_remove);
 };
 
 

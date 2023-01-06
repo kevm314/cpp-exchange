@@ -6,7 +6,4 @@
 enum TradeOrderType {
     GTC,
     IOC,
-    IOC_BUDGET,
-    FOK,
-    FOK_BUDGET
 };

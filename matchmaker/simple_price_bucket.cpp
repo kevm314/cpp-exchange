@@ -39,6 +39,9 @@ uint64_t SimplePriceBucket::GetPrice() {
 uint64_t SimplePriceBucket::GetTotalVolume() {
     return total_volume_;
 }
+uint64_t SimplePriceBucket::GetNumOrders() {
+    return tracked_orders_.size();
+}
 matchmaker::TradeOrder* SimplePriceBucket::GetFirstOrder() {
     return order_list_head_;
 }
@@ -111,7 +114,7 @@ bool SimplePriceBucket::EraseOrder(matchmaker::TradeOrder& trade_order) {
     tracked_orders_.erase(trade_id);
     return true;
 }
-uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>>& trade_events) {
+uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events, std::vector<std::string>& trades_to_remove) {
     const TradeQuotationType request_quote_needed = quotation_type_ == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
     // check if 0 orders in bucket or other invalid reasons
     if (tracked_orders_.size() == 0 || requested_order.GetQuotationType() != request_quote_needed || requested_order.GetPrice() != price_ || requested_order.GetSize() == 0)
@@ -152,6 +155,7 @@ uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order
         candidate_order = candidate_order->GetNextOrder();
         if (candidate_to_delete->GetFilled() == candidate_to_delete->GetSize()) {
             candidate_to_delete->SetOrderOutcome(OrderOutcomeType::SUCCESS);
+            trades_to_remove.emplace_back(candidate_to_delete->GetTradeIdAsString());
             EraseOrder(*candidate_to_delete);
         }
         // check if requested order is completely filled

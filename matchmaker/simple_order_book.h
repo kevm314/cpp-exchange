@@ -50,7 +50,7 @@ class SimpleOrderBook: public BaseOrderBook {
         SimpleOrderBook(
             matchmaker::InstrumentSymbol instrument_symbol
         );
-        virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order) override;
+        virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         OrderOutcomeType ProcessGtcOrder(
             matchmaker::TradeOrder& trade_order,
@@ -64,9 +64,9 @@ class SimpleOrderBook: public BaseOrderBook {
             PriceBucketsIterator& price_buckets,
             std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
         );
-        // virtual OrderOutcomeType CancelOrder(matchmaker::TradeOrder& trade_order) override;
-        // virtual OrderOutcomeType ReduceOrderSize(matchmaker::TradeOrder& trade_order) override;
-        // virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder& trade_order) override;
+        virtual OrderOutcomeType CancelOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
+        virtual OrderOutcomeType AlterOrderSize(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
+        virtual OrderOutcomeType AlterOrderPrice(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         // virtual std::vector<matchmaker::TradeOrder> GetUserOrders(const std::array<uint8_t, 32>& user_id) override;
         bool DoesTradeExist(std::string trade_id);
         bool IsValidSymbolAndSize(matchmaker::TradeOrder& trade_order);
@@ -87,6 +87,10 @@ class SimpleOrderBook: public BaseOrderBook {
             PriceBucketsIterator& price_buckets,
             std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events
         );
+        uint64_t GetNumOrdersAtPrice(uint64_t price, TradeQuotationType quote_type);
+        uint64_t GetVolumeAtPrice(uint64_t price, TradeQuotationType quote_type);
+        bool RemoveOrderFromBucketAndOrderBook(matchmaker::TradeOrder* existing_order);
+        matchmaker::TradeOrder* FindMatchingTradeOrder(matchmaker::TradeOrder trade_order, OrderOutcomeType& outcome);
 };
 
 }

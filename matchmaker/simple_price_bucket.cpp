@@ -114,6 +114,24 @@ bool SimplePriceBucket::EraseOrder(matchmaker::TradeOrder& trade_order) {
     tracked_orders_.erase(trade_id);
     return true;
 }
+bool SimplePriceBucket::AlterOrderSize(std::string trade_id, uint64_t new_size) {
+    if (new_size == 0)
+        return false;
+    std::unordered_map<std::string, matchmaker::TradeOrder*>::iterator trade_order_it = tracked_orders_.find(trade_id);
+    if (trade_order_it == tracked_orders_.end())
+        return false;
+    int64_t size_delta = new_size - trade_order_it->second->GetSize();
+    if (size_delta + total_volume_ < 0) {
+        spdlog::critical("Simple price bucket will have negative volume after order size reduction, rejecting size reduction");
+        return false;
+    }
+    // return false on failure to set new size
+    if (!trade_order_it->second->SetNewSize(new_size))
+        return false;
+    // adjust bucket volume
+    total_volume_ += size_delta;
+    return true;
+}
 uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events, std::vector<std::string>& trades_to_remove) {
     const TradeQuotationType request_quote_needed = quotation_type_ == TradeQuotationType::ASK ? TradeQuotationType::BID : TradeQuotationType::ASK;
     // check if 0 orders in bucket or other invalid reasons
@@ -128,6 +146,11 @@ uint64_t SimplePriceBucket::FulfillOrder(matchmaker::TradeOrder& requested_order
         // if sufficient volume perform trade (generate trade event)
         candidate_fulfilled_volume = std::min(candidate_order->GetSize() - candidate_order->GetFilled(), requested_order.GetSize() - requested_order.GetFilled());
         // update filled volumes
+        if ((candidate_order->GetFilled() + candidate_fulfilled_volume) > candidate_order->GetSize() ||\
+            (requested_order.GetFilled() + candidate_fulfilled_volume) > requested_order.GetSize()) {
+            spdlog::critical("Simple price bucket trade will overflow candidate or request order - aborting trade");
+            return requested_order.GetFilled();
+        }
         candidate_order->SetFilled(candidate_order->GetFilled() + candidate_fulfilled_volume);
         requested_order.SetFilled(requested_order.GetFilled() + candidate_fulfilled_volume);
         total_volume_ -= candidate_fulfilled_volume;

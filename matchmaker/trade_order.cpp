@@ -10,13 +10,13 @@ namespace matchmaker {
 TradeOrder::TradeOrder(
     std::array<uint8_t, 36> trade_id, 
     std::array<uint8_t, 36> user_id,
-    uint32_t instrument_symbol_id, 
-    TradeOrderType order_type, 
-    TradeQuotationType quotation_type, 
-    OrderRequestType request_type, 
-    OrderOutcomeType order_outcome, 
-    uint64_t price, 
-    uint64_t size, 
+    uint32_t instrument_symbol_id,
+    TradeOrderType order_type,
+    TradeQuotationType quotation_type,
+    OrderRequestType request_type,
+    OrderOutcomeType order_outcome,
+    uint64_t price,
+    uint64_t size,
     uint32_t timestamp
 ):
     trade_id_(trade_id),
@@ -61,7 +61,8 @@ TradeOrder::TradeOrder(TradeOrder&& trade_order):
     size_(trade_order.GetSize()), 
     timestamp_(trade_order.GetTimestamp()),
     prev_order_(trade_order.GetPrevOrder()),
-    next_order_(trade_order.GetNextOrder())
+    next_order_(trade_order.GetNextOrder()),
+    filled_(trade_order.GetFilled())
 {
     trade_order.SetPrevOrder(nullptr);
     trade_order.SetNextOrder(nullptr);
@@ -80,6 +81,7 @@ TradeOrder& TradeOrder::operator=(TradeOrder&& trade_order) {
     timestamp_ = trade_order.GetTimestamp();
     prev_order_ = trade_order.GetPrevOrder();
     next_order_ = trade_order.GetNextOrder();
+    filled_ = trade_order.GetFilled();
     trade_order.SetPrevOrder(nullptr);
     trade_order.SetNextOrder(nullptr);
     trade_order.SetFilled(0);
@@ -115,8 +117,20 @@ void TradeOrder::SetOrderOutcome(OrderOutcomeType outcome) {
 uint64_t TradeOrder::GetPrice() {
     return price_;
 }
+bool TradeOrder::SetNewPrice(uint64_t new_price) {
+    if (new_price == 0)
+        return false;
+    price_ = new_price;
+    return true;
+}
 uint64_t TradeOrder::GetSize() {
     return size_;
+}
+bool TradeOrder::SetNewSize(uint64_t new_size) {
+    if (new_size == 0 || new_size <= filled_)
+        return false;
+    size_ = new_size;
+    return true;
 }
 uint64_t TradeOrder::GetFilled() {
     return filled_;

@@ -7,6 +7,6 @@
 enum OrderRequestType {
     PLACE_ORDER,
     CANCEL_ORDER,
-    MOVE_ORDER,
-    REDUCE_ORDER
+    ALTER_ORDER_PRICE,
+    ALTER_ORDER_SIZE
 };

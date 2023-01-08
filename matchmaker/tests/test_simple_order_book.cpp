@@ -288,16 +288,16 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // first bid
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     ASSERT_EQ((*trade_events).size(), 0);
     ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
     // second bid
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[1], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[1], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     ASSERT_EQ((*trade_events).size(), 0);
     ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
     ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[1].GetTradeIdAsString()));
     // first ask (2 bids completely filled hence 2 trade events of respective volume 1, 2)
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_asks_[1], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_asks_[1], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
     ASSERT_EQ((*trade_events).size(), 2);
     ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
     ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_[1].GetTradeIdAsString()));
@@ -308,19 +308,19 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
     ASSERT_EQ((*trade_events)[1].GetBidTradeId(), mock_bids_[1].GetTradeId());
     ASSERT_EQ((*trade_events)[1].GetAskTradeId(), mock_asks_[1].GetTradeId());
     ASSERT_EQ((*trade_events)[1].GetSize(), 2);
-    ASSERT_TRUE(mock_bids_[0].GetFilled() == mock_bids_[0].GetSize());
-    ASSERT_TRUE(mock_bids_[1].GetFilled() == mock_bids_[1].GetSize());
-    ASSERT_EQ(mock_asks_[1].GetFilled(), 3);
+    OrderOutcomeType find_trade_outcome;
+    matchmaker::TradeOrder* second_ask = simple_ob.FindMatchingTradeOrder(mock_asks_[1], find_trade_outcome);
+    ASSERT_EQ(second_ask->GetFilled(), 3);
     // third bid (1 trade event of volume 1)
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_[2], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[2], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
     ASSERT_EQ((*trade_events).size(), 3);
     ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[2].GetTradeIdAsString()));
     ASSERT_FALSE(simple_ob.DoesTradeExist(mock_asks_[1].GetTradeIdAsString()));
     ASSERT_EQ((*trade_events)[2].GetBidTradeId(), mock_bids_[2].GetTradeId());
     ASSERT_EQ((*trade_events)[2].GetAskTradeId(), mock_asks_[1].GetTradeId());
     ASSERT_EQ((*trade_events)[2].GetSize(), 1);
-    ASSERT_TRUE(mock_asks_[1].GetFilled() == mock_asks_[1].GetSize());
-    ASSERT_EQ(mock_bids_[2].GetFilled(), 1);
+    matchmaker::TradeOrder* third_bid = simple_ob.FindMatchingTradeOrder(mock_bids_[2], find_trade_outcome);
+    ASSERT_EQ(third_bid->GetFilled(), 1);
 }
 
 /**
@@ -331,17 +331,86 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcIoc) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
     matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
     // first GTC ask
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_asks_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_asks_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     ASSERT_EQ((*trade_events).size(), 0);
     ASSERT_TRUE(simple_ob.DoesTradeExist(mock_asks_[0].GetTradeIdAsString()));
     // second IOC bid
-    ASSERT_EQ(simple_ob.ProcessNewOrder(mock_bids_ioc_[0], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_ioc_[0], trade_events), OrderOutcomeType::ORDER_PARTIALLY_FILLED);
     ASSERT_EQ((*trade_events).size(), 1);
     ASSERT_FALSE(simple_ob.DoesTradeExist(mock_asks_[0].GetTradeIdAsString()));
     ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_ioc_[0].GetTradeIdAsString()));
     ASSERT_EQ((*trade_events)[0].GetBidTradeId(), mock_bids_ioc_[0].GetTradeId());
     ASSERT_EQ((*trade_events)[0].GetAskTradeId(), mock_asks_[0].GetTradeId());
     ASSERT_EQ((*trade_events)[0].GetSize(), 1);
-    ASSERT_TRUE(mock_asks_[0].GetFilled() == mock_asks_[0].GetSize());
-    ASSERT_EQ(mock_bids_ioc_[0].GetFilled(), 1);
+}
+
+
+/**
+ * @brief Test alter order price.
+ * 
+ */
+TEST_F(TestSimpleOrderBookMockOrders, AlterOrderPrice) {
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    uint64_t old_price = mock_bids_[0].GetPrice();
+    // place order
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    // check it exists
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // confirm number of orders in specific price bucket
+    ASSERT_EQ(simple_ob.GetNumOrdersAtPrice(mock_bids_[0].GetPrice(), mock_bids_[0].GetQuotationType()), 1);
+    // alter order price
+    matchmaker::TradeOrder new_price_copy = matchmaker::TradeOrder(mock_bids_[0]);
+    ASSERT_TRUE(new_price_copy.SetNewPrice(200));
+    ASSERT_EQ(simple_ob.AlterOrderPrice(new_price_copy, trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    // check order still exists
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // confirm number of orders in specific price bucket
+    ASSERT_EQ(simple_ob.GetNumOrdersAtPrice(old_price, new_price_copy.GetQuotationType()), 0);
+    ASSERT_EQ(simple_ob.GetNumOrdersAtPrice(new_price_copy.GetPrice(), new_price_copy.GetQuotationType()), 1);
+}
+
+
+/**
+ * @brief Test alter order size.
+ * 
+ */
+TEST_F(TestSimpleOrderBookMockOrders, AlterOrderSize) {
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    // place order
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    // check it exists
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // confirm volume in specific price bucket
+    ASSERT_EQ(simple_ob.GetVolumeAtPrice(mock_bids_[0].GetPrice(), mock_bids_[0].GetQuotationType()), mock_bids_[0].GetSize());
+    // alter order size
+    matchmaker::TradeOrder new_size_copy = matchmaker::TradeOrder(mock_bids_[0]);
+    uint64_t new_size = 101;
+    ASSERT_TRUE(new_size_copy.SetNewSize(new_size));
+    ASSERT_EQ(simple_ob.AlterOrderSize(new_size_copy, trade_events), OrderOutcomeType::SUCCESS);
+    // check order still exists
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // confirm size in specific price bucket
+    ASSERT_EQ(simple_ob.GetVolumeAtPrice(new_size_copy.GetPrice(), new_size_copy.GetQuotationType()), new_size);
+}
+
+/**
+ * @brief Test cancel order.
+ * 
+ */
+TEST_F(TestSimpleOrderBookMockOrders, CancelOrder) {
+    std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    // place order
+    ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
+    // check it exists
+    ASSERT_TRUE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    // confirm volume in specific price bucket
+    ASSERT_EQ(simple_ob.GetVolumeAtPrice(mock_bids_[0].GetPrice(), mock_bids_[0].GetQuotationType()), mock_bids_[0].GetSize());
+    // cancel order
+    ASSERT_EQ(simple_ob.CancelOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_CANCEL_SUCCESS);
+    // check it no longer exists and price volume is 0
+    ASSERT_FALSE(simple_ob.DoesTradeExist(mock_bids_[0].GetTradeIdAsString()));
+    ASSERT_EQ(simple_ob.GetVolumeAtPrice(mock_bids_[0].GetPrice(), mock_bids_[0].GetQuotationType()), 0);
 }

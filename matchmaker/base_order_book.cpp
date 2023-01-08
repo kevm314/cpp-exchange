@@ -18,19 +18,19 @@ BaseOrderBook::BaseOrderBook(
 matchmaker::InstrumentSymbol BaseOrderBook::GetInstrumentSymbol() {
     return instrument_symbol_;
 }
-OrderOutcomeType BaseOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order) {
+OrderOutcomeType BaseOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 }
 OrderOutcomeType BaseOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 } 
-OrderOutcomeType BaseOrderBook::CancelOrder(matchmaker::TradeOrder& trade_order) {
+OrderOutcomeType BaseOrderBook::CancelOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 } 
-OrderOutcomeType BaseOrderBook::ReduceOrderSize(matchmaker::TradeOrder& trade_order) {
+OrderOutcomeType BaseOrderBook::AlterOrderSize(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 } 
-OrderOutcomeType BaseOrderBook::AlterOrderPrice(matchmaker::TradeOrder& trade_order) {
+OrderOutcomeType BaseOrderBook::AlterOrderPrice(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     return OrderOutcomeType::FAIL;
 } 
 std::vector<matchmaker::TradeOrder> BaseOrderBook::GetUserOrders(const std::array<uint8_t, 32>& user_id) {

@@ -55,7 +55,9 @@ class TradeOrder {
         OrderOutcomeType GetOrderOutcome();
         void SetOrderOutcome(OrderOutcomeType outcome);
         uint64_t GetPrice();
+        bool SetNewPrice(uint64_t new_price);
         uint64_t GetSize();
+        bool SetNewSize(uint64_t new_size);
         uint64_t GetFilled();
         bool SetFilled(uint64_t fill_amount);
         uint32_t GetTimestamp();

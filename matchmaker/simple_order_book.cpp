@@ -108,17 +108,34 @@ uint64_t SimpleOrderBook::GetNumberBuckets(TradeQuotationType counter_quote) {
     }
     return 0;
 }
-OrderOutcomeType SimpleOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order) {
+uint64_t SimpleOrderBook::GetNumOrdersAtPrice(uint64_t price, TradeQuotationType quote_type) {
+    std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = (*quoted_prices_[quote_type]).find(price);
+    if (price_bucket == (*quoted_prices_[quote_type]).end())
+        return 0;
+    return price_bucket->second.GetNumOrders();
+}
+uint64_t SimpleOrderBook::GetVolumeAtPrice(uint64_t price, TradeQuotationType quote_type) {
+    std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = (*quoted_prices_[quote_type]).find(price);
+    if (price_bucket == (*quoted_prices_[quote_type]).end())
+        return 0;
+    return price_bucket->second.GetTotalVolume();
+}
+OrderOutcomeType SimpleOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     // TODO: consume a generic order book task which is funnelled below (need a way of storing a generic TradeTask message (passed in via TaskProducer + ringbuffer))
-    // TODO: update here
     switch(trade_order.GetRequestType()) {
         case OrderRequestType::PLACE_ORDER:
-            break;
+            return ProcessNewOrder(trade_order, trade_events);
+        case OrderRequestType::CANCEL_ORDER:
+            return CancelOrder(trade_order, trade_events);
+        case OrderRequestType::ALTER_ORDER_PRICE:
+            return AlterOrderPrice(trade_order, trade_events);
+        case OrderRequestType::ALTER_ORDER_SIZE:
+            return AlterOrderSize(trade_order, trade_events);
         default:
             spdlog::critical("Unsupported order request type submitted for trade id: " + trade_order.GetTradeIdAsString());
-            return OrderOutcomeType::FAIL;
+            return OrderOutcomeType::INVALID_REQUEST_TYPE;
     }
-    return OrderOutcomeType::SUCCESS;
+    return OrderOutcomeType::INVALID_REQUEST_TYPE;
 }
 OrderOutcomeType SimpleOrderBook::ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
     // check instrument symbol, volume
@@ -152,13 +169,15 @@ OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(
     if (order_outcome == OrderOutcomeType::ORDER_COMPLETELY_FILLED)
         return order_outcome;
     // add new order into map for tracking by the orderbook
-    (*orderbook_orders_).emplace(std::make_pair(trade_order.GetTradeIdAsString(), trade_order));
+    std::pair<std::unordered_map<std::string, matchmaker::TradeOrder>::iterator, bool> new_order_pair = (*orderbook_orders_).emplace(std::make_pair(trade_order.GetTradeIdAsString(), trade_order));
+    if (!new_order_pair.second)
+        return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
     // create a new price bucket (only when needing to place new order into requested quote price buckets)
     CreatePriceBucket(trade_order.GetPrice(), trade_order.GetQuotationType());
     std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = (*quoted_prices_[trade_order.GetQuotationType()]).find(trade_order.GetPrice());
     if (price_bucket == (*quoted_prices_[trade_order.GetQuotationType()]).end())
         return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
-    price_bucket->second.InsertOrder(trade_order);
+    price_bucket->second.InsertOrder(new_order_pair.first->second);
     return order_outcome;
 }
 OrderOutcomeType SimpleOrderBook::ProcessIocOrder(
@@ -198,5 +217,72 @@ OrderOutcomeType SimpleOrderBook::IterativelyFulfillOrder(
         return OrderOutcomeType::ORDER_NOT_FILLED;
     return OrderOutcomeType::ORDER_PARTIALLY_FILLED;
 }
-
+OrderOutcomeType SimpleOrderBook::CancelOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
+    OrderOutcomeType outcome;
+    TradeOrder* existing_order = FindMatchingTradeOrder(trade_order, outcome);
+    if (existing_order == nullptr)
+        return outcome;
+    if (!RemoveOrderFromBucketAndOrderBook(existing_order))
+        return OrderOutcomeType::ORDER_EXISTS_CANCEL_ERROR;
+    return OrderOutcomeType::ORDER_CANCEL_SUCCESS;
+}
+OrderOutcomeType SimpleOrderBook::AlterOrderSize(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
+    OrderOutcomeType outcome;
+    TradeOrder* existing_order = FindMatchingTradeOrder(trade_order, outcome);
+    if (existing_order == nullptr)
+        return outcome;
+    // only support reduction to a non-zero unfulfilled amount (otherwise order cancel operation must be used)
+    if (trade_order.GetSize() == 0 || (existing_order->GetFilled() == trade_order.GetSize()))
+        return OrderOutcomeType::NOT_PROCESSED;
+    // get price bucket from appropriate bid/ask data store
+    // reduce order size via the price bucket
+    std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = (*quoted_prices_[existing_order->GetQuotationType()]).find(existing_order->GetPrice());
+    if (price_bucket == (*quoted_prices_[existing_order->GetQuotationType()]).end())
+        return OrderOutcomeType::ORDER_EXISTS_SIZE_CHANGE_ERROR;
+    if (price_bucket->second.AlterOrderSize(existing_order->GetTradeIdAsString(), trade_order.GetSize()))
+        return OrderOutcomeType::SUCCESS;
+    return OrderOutcomeType::FAIL;
+}
+OrderOutcomeType SimpleOrderBook::AlterOrderPrice(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {
+    OrderOutcomeType outcome;
+    TradeOrder* existing_order = FindMatchingTradeOrder(trade_order, outcome);
+    if (existing_order == nullptr)
+        return outcome;
+    if (existing_order->GetPrice() == trade_order.GetPrice())
+        return OrderOutcomeType::NOT_PROCESSED;
+    matchmaker::TradeOrder copied_order = *existing_order;
+    if (!RemoveOrderFromBucketAndOrderBook(existing_order))
+        return OrderOutcomeType::ORDER_EXISTS_PRICE_CHANGE_ERROR;
+    // process existing trade order as new order after price update
+    if (!copied_order.SetNewPrice(trade_order.GetPrice()))
+        return OrderOutcomeType::ORDER_EXISTS_PRICE_CHANGE_ERROR;
+    return ProcessNewOrder(copied_order, trade_events);
+}
+bool SimpleOrderBook::RemoveOrderFromBucketAndOrderBook(matchmaker::TradeOrder* existing_order) {
+    // get price bucket from appropriate bid/ask data store
+    std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket_it = (*quoted_prices_[existing_order->GetQuotationType()]).find(existing_order->GetPrice());
+    if (price_bucket_it == (*quoted_prices_[existing_order->GetQuotationType()]).end())
+        return false;
+    // erase order from price bucket (check bucket empty deletion too) and then from main order book map
+    price_bucket_it->second.EraseOrder(*existing_order);
+    if (price_bucket_it->second.GetNumOrders() == 0)
+        (*quoted_prices_[existing_order->GetQuotationType()]).erase(price_bucket_it->second.GetPrice());
+    orderbook_orders_->erase(existing_order->GetTradeIdAsString());
+    return true;
+}
+matchmaker::TradeOrder* SimpleOrderBook::FindMatchingTradeOrder(matchmaker::TradeOrder trade_order, OrderOutcomeType& outcome) {
+    // check if order id exists and that user ids match, and that price is different
+    std::unordered_map<std::string, matchmaker::TradeOrder>::iterator existing_order_it = (*orderbook_orders_).find(trade_order.GetTradeIdAsString());
+    if (existing_order_it == (*orderbook_orders_).end()) {
+        outcome = OrderOutcomeType::ORDER_ID_NON_EXISTENT;
+        return nullptr;
+    }
+    TradeOrder* existing_order = &(existing_order_it->second);
+    if (existing_order->GetUserId() != trade_order.GetUserId()) {
+        outcome = OrderOutcomeType::NON_USER_ACCESS_TO_ORDER;
+        return nullptr;
+    }
+    outcome = OrderOutcomeType::SUCCESS;
+    return existing_order;
+}
 }

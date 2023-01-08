@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 namespace matchmaker {
 
@@ -22,6 +23,7 @@ enum InstrumentType {
 class InstrumentSymbol {
     private:
         const uint32_t instrument_symbol_id_;
+        const std::string instrument_name_;
         const InstrumentType instrument_type_;
         const int32_t base_currency_;
         // counter currency
@@ -33,6 +35,7 @@ class InstrumentSymbol {
     public:
         InstrumentSymbol(
             uint32_t instrument_symbol_id,
+            std::string instrument_name,
             InstrumentType instrument_type,
             int32_t base_currency,
             int32_t quote_currency,

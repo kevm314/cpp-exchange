@@ -42,6 +42,9 @@ docker compose up
 ## TODO
 
 - start implementation of matchmaker
+  - implement main order book set up class
+    - (exchange matchmakers set up function) read json config file (instrument type with all symbols)
+    - same function constructs order books based on json config (into InstrumentMatchmaker class) + spawn each instrument as thread (matchmaker thread => debug spawner with csv streaming playback)
 - tidy project folder structure:
   - messaging (ring buffer, producers, consumers)
   - receiver (producer that receives order events from users)

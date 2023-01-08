@@ -1,3 +1,5 @@
+#include <string>
+
 #include "instrument_symbol.h"
 
 
@@ -5,6 +7,7 @@ namespace matchmaker {
 
 InstrumentSymbol::InstrumentSymbol(
     uint32_t instrument_symbol_id,
+    std::string instrument_name,
     InstrumentType instrument_type,
     int32_t base_currency,
     int32_t quote_currency,
@@ -13,6 +16,7 @@ InstrumentSymbol::InstrumentSymbol(
     int32_t maker_fee
 ):
     instrument_symbol_id_(instrument_symbol_id),
+    instrument_name_(instrument_name),
     instrument_type_(instrument_type),
     base_currency_(base_currency),
     quote_currency_(quote_currency),

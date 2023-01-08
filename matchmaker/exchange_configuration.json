@@ -1,0 +1,14 @@
+{
+    "symbols" : {
+        "0" : {
+            "instrument_name": "MSFT",
+            "instrument_type": 3,
+            "maker_fee": 1
+        }
+    },
+    "instrument_types": {
+        "3" : [
+            0
+        ]
+    }
+}

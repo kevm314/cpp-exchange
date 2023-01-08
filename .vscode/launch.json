@@ -8,7 +8,7 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/matchmaker/build/matchmaker-test",
+            "program": "${workspaceFolder}/build/exchange", //"${workspaceFolder}/matchmaker/build/matchmaker-test"
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "MIMode": "gdb",

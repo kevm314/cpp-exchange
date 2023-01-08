@@ -41,15 +41,13 @@ class SimpleOrderBook: public BaseOrderBook {
         // TODO: update -> Bid/ask prices stored as (price -> orders bucket), and then in a bucket (order id -> order object)
         std::map<uint64_t, SimplePriceBucket> bid_prices_ = {};
         std::map<uint64_t, SimplePriceBucket> ask_prices_ = {};
-        std::unordered_map<TradeQuotationType, std::map<uint64_t, SimplePriceBucket>*> quoted_prices_ = {
-            {TradeQuotationType::BID, &bid_prices_},
-            {TradeQuotationType::ASK, &ask_prices_}
-        };
+        std::unordered_map<TradeQuotationType, std::map<uint64_t, SimplePriceBucket>*> quoted_prices_ = {};
         std::unique_ptr<std::unordered_map<std::string, matchmaker::TradeOrder>> orderbook_orders_ = std::make_unique<std::unordered_map<std::string, matchmaker::TradeOrder>>();
     public:
         SimpleOrderBook(
             matchmaker::InstrumentSymbol instrument_symbol
         );
+        SimpleOrderBook(SimpleOrderBook& simple_order_book) = delete;
         virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;
         OrderOutcomeType ProcessGtcOrder(

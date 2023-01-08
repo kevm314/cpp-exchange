@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include <array>
+#include <iostream>
 #include <vector>
 
 #include "spdlog/spdlog.h"
@@ -71,7 +72,12 @@ SimpleOrderBook::SimpleOrderBook(
     matchmaker::InstrumentSymbol instrument_symbol
 ):
     BaseOrderBook(instrument_symbol)
-{}
+{
+    quoted_prices_ = {
+        {TradeQuotationType::BID, &bid_prices_},
+        {TradeQuotationType::ASK, &ask_prices_}
+    };
+}
 bool SimpleOrderBook::DoesTradeExist(std::string trade_id) {
     return (*orderbook_orders_).contains(trade_id);
 }
@@ -92,13 +98,12 @@ bool SimpleOrderBook::CreatePriceBucket(uint64_t price, TradeQuotationType count
     if (counter_quote == TradeQuotationType::BID) {
         if (bid_prices_.contains(price))
             return false;
-        bid_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price)));
+        return bid_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price))).second;
     } else {
         if (ask_prices_.contains(price))
             return false;
-        ask_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price)));
+        return ask_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price))).second;
     }
-    return true;
 }
 uint64_t SimpleOrderBook::GetNumberBuckets(TradeQuotationType counter_quote) {
     if (counter_quote == TradeQuotationType::BID) {
@@ -170,14 +175,21 @@ OrderOutcomeType SimpleOrderBook::ProcessGtcOrder(
         return order_outcome;
     // add new order into map for tracking by the orderbook
     std::pair<std::unordered_map<std::string, matchmaker::TradeOrder>::iterator, bool> new_order_pair = (*orderbook_orders_).emplace(std::make_pair(trade_order.GetTradeIdAsString(), trade_order));
-    if (!new_order_pair.second)
+    if (!new_order_pair.second) {
+        spdlog::warn("SimpleOrderBook::IterativeFulfillOrder - unable to add new TradeOrder into orderbook tracking map");
         return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
+    }
     // create a new price bucket (only when needing to place new order into requested quote price buckets)
-    CreatePriceBucket(trade_order.GetPrice(), trade_order.GetQuotationType());
+    if (!CreatePriceBucket(trade_order.GetPrice(), trade_order.GetQuotationType())) {
+        spdlog::debug("SimpleOrderBook::IterativeFulfillOrder - no new price bucket created for order");
+    }
     std::map<uint64_t, matchmaker::SimplePriceBucket>::iterator price_bucket = (*quoted_prices_[trade_order.GetQuotationType()]).find(trade_order.GetPrice());
-    if (price_bucket == (*quoted_prices_[trade_order.GetQuotationType()]).end())
+    if (price_bucket == (*quoted_prices_[trade_order.GetQuotationType()]).end()) {
+        spdlog::warn("SimpleOrderBook::IterativeFulfillOrder - unable to add new TradeOrder into orderbook price bucket");
         return OrderOutcomeType::ORDER_PARTIALLY_FILLED_INSERTION_ERROR;
+    }
     price_bucket->second.InsertOrder(new_order_pair.first->second);
+    spdlog::info("Processed GTC order added to price bucket - with trade id: " + new_order_pair.first->second.GetTradeIdAsString());
     return order_outcome;
 }
 OrderOutcomeType SimpleOrderBook::ProcessIocOrder(

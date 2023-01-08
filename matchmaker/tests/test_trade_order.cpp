@@ -125,6 +125,7 @@ TEST(TestInstrumentSymbol, SimpleConstruction) {
     int32_t maker_fee = 1;
     matchmaker::InstrumentSymbol eur_usd_pair = matchmaker::InstrumentSymbol(
         instrument_symbol_id,
+        "test_symbol",
         instrument_type,
         base_currency,
         quote_currency,

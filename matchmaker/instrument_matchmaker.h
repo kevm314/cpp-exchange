@@ -18,12 +18,12 @@ class InstrumentMatchmaker {
     private:
         const matchmaker::InstrumentType instrument_type_;
         std::unordered_map<uint64_t, matchmaker::SimpleOrderBook> symbol_orderbooks_;
-        std::unordered_map<uint64_t, matchmaker::InstrumentSymbol> instrument_symbols_;
+        std::unordered_map<uint64_t, matchmaker::InstrumentSymbol*> instrument_symbols_;
     public:
         InstrumentMatchmaker(
             matchmaker::InstrumentType instrument_type
         );
-        bool AddSymbol(matchmaker::InstrumentSymbol& instrument_symbol);
+        bool AddSymbol(matchmaker::InstrumentSymbol* instrument_symbol);
         uint16_t GetNumOrderBooks();
         matchmaker::InstrumentType GetInstrumentType();
         OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events);

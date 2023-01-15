@@ -15,6 +15,7 @@ if(NOT TARGET spdlog)
     # Stand-alone build
     find_package(spdlog REQUIRED)
 endif()
+find_package(nlohmann_json 3.2.0 REQUIRED)
 
 
 if (TEST)
@@ -27,6 +28,7 @@ endif()
 
 
 include_directories("/usr/local/lib")
+include_directories("/usr/local/include")
 include_directories(matchmaker)
 
 add_subdirectory(./matchmaker)
@@ -34,6 +36,7 @@ add_subdirectory(./matchmaker)
 set(
   TARGET_LIBRARIES
   spdlog::spdlog
+  nlohmann_json::nlohmann_json
   matchmaker
 )
 

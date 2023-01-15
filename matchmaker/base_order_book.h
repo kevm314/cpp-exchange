@@ -17,12 +17,12 @@ namespace matchmaker {
  */
 class BaseOrderBook {
     private:
-        const matchmaker::InstrumentSymbol instrument_symbol_;
+        const matchmaker::InstrumentSymbol* instrument_symbol_;
     public:
         BaseOrderBook(
-            matchmaker::InstrumentSymbol instrument_symbol
+            matchmaker::InstrumentSymbol* instrument_symbol
         );
-        matchmaker::InstrumentSymbol GetInstrumentSymbol();
+        const matchmaker::InstrumentSymbol* GetInstrumentSymbol();
         virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events);
         // execute new order
         virtual OrderOutcomeType ProcessNewOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events);

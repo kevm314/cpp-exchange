@@ -35,8 +35,8 @@ class TestSimpleOrderBook : virtual public ::testing::Test {
 };
 
 TEST_F(TestSimpleOrderBook, SimpleConstruction) {
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
-    ASSERT_EQ(simple_ob.GetInstrumentSymbol().GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
+    ASSERT_EQ(simple_ob.GetInstrumentSymbol()->GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
 }
 
 
@@ -199,7 +199,7 @@ class TestSimpleOrderBookMockOrders : public TestSimpleOrderBook, public MockBid
  */
 TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQuerying) {
     TradeQuotationType counter_quote = TradeQuotationType::BID;
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // create 4 price buckets
     ASSERT_TRUE(simple_ob.CreatePriceBucket(1, counter_quote));
     ASSERT_TRUE(simple_ob.CreatePriceBucket(2, counter_quote));
@@ -224,7 +224,7 @@ TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQuerying) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQueryingNoBuckets) {
     TradeQuotationType counter_quote = TradeQuotationType::BID;
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // create 4 price buckets
     ASSERT_TRUE(simple_ob.CreatePriceBucket(10, counter_quote));
     ASSERT_TRUE(simple_ob.CreatePriceBucket(20, counter_quote));
@@ -243,7 +243,7 @@ TEST_F(TestSimpleOrderBookMockOrders, BidPriceBucketCreationQueryingNoBuckets) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQuerying) {
     TradeQuotationType counter_quote = TradeQuotationType::ASK;
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // create 4 price buckets
     ASSERT_TRUE(simple_ob.CreatePriceBucket(1, counter_quote));
     ASSERT_TRUE(simple_ob.CreatePriceBucket(2, counter_quote));
@@ -268,7 +268,7 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQuerying) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQueryingNoBuckets) {
     TradeQuotationType counter_quote = TradeQuotationType::ASK;
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // create 4 price buckets
     ASSERT_TRUE(simple_ob.CreatePriceBucket(10, counter_quote));
     ASSERT_TRUE(simple_ob.CreatePriceBucket(20, counter_quote));
@@ -287,7 +287,7 @@ TEST_F(TestSimpleOrderBookMockOrders, AskPriceBucketCreationQueryingNoBuckets) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // first bid
     ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     ASSERT_EQ((*trade_events).size(), 0);
@@ -330,7 +330,7 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcSimple) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcIoc) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // first GTC ask
     ASSERT_EQ(simple_ob.ConsumeOrder(mock_asks_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     ASSERT_EQ((*trade_events).size(), 0);
@@ -352,7 +352,7 @@ TEST_F(TestSimpleOrderBookMockOrders, PlaceGtcIoc) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, AlterOrderPrice) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     uint64_t old_price = mock_bids_[0].GetPrice();
     // place order
     ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
@@ -378,7 +378,7 @@ TEST_F(TestSimpleOrderBookMockOrders, AlterOrderPrice) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, AlterOrderSize) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // place order
     ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     // check it exists
@@ -402,7 +402,7 @@ TEST_F(TestSimpleOrderBookMockOrders, AlterOrderSize) {
  */
 TEST_F(TestSimpleOrderBookMockOrders, CancelOrder) {
     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(eur_usd_pair);
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
     // place order
     ASSERT_EQ(simple_ob.ConsumeOrder(mock_bids_[0], trade_events), OrderOutcomeType::ORDER_NOT_FILLED);
     // check it exists

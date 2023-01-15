@@ -45,7 +45,7 @@ class SimpleOrderBook: public BaseOrderBook {
         std::unique_ptr<std::unordered_map<std::string, matchmaker::TradeOrder>> orderbook_orders_ = std::make_unique<std::unordered_map<std::string, matchmaker::TradeOrder>>();
     public:
         SimpleOrderBook(
-            matchmaker::InstrumentSymbol instrument_symbol
+            matchmaker::InstrumentSymbol* instrument_symbol
         );
         SimpleOrderBook(SimpleOrderBook& simple_order_book) = delete;
         virtual OrderOutcomeType ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) override;

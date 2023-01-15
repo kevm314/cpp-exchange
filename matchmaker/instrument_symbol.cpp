@@ -9,11 +9,11 @@ InstrumentSymbol::InstrumentSymbol(
     uint32_t instrument_symbol_id,
     std::string instrument_name,
     InstrumentType instrument_type,
-    int32_t base_currency,
-    int32_t quote_currency,
-    int32_t base_multiplier_k,
-    int32_t quote_multiplier_k,
-    int32_t maker_fee
+    uint32_t base_currency,
+    uint32_t quote_currency,
+    uint32_t base_multiplier_k,
+    uint32_t quote_multiplier_k,
+    uint32_t maker_fee
 ):
     instrument_symbol_id_(instrument_symbol_id),
     instrument_name_(instrument_name),
@@ -25,7 +25,7 @@ InstrumentSymbol::InstrumentSymbol(
     maker_fee_(maker_fee)
 {}
 
-uint32_t InstrumentSymbol::GetInstrumentSymbolId() {
+uint32_t InstrumentSymbol::GetInstrumentSymbolId() const {
     return instrument_symbol_id_;
 }
 
@@ -33,23 +33,23 @@ InstrumentType InstrumentSymbol::GetInstrumentType() {
     return instrument_type_;
 }
 
-int32_t InstrumentSymbol::GetBaseCurrency() {
+uint32_t InstrumentSymbol::GetBaseCurrency() {
     return base_currency_;
 }
 
-int32_t InstrumentSymbol::GetQuoteCurrency() {
+uint32_t InstrumentSymbol::GetQuoteCurrency() {
     return quote_currency_;
 }
 
-int32_t InstrumentSymbol::GetBaseMultiplierK() {
+uint32_t InstrumentSymbol::GetBaseMultiplierK() {
     return base_multiplier_k_;
 }
 
-int32_t InstrumentSymbol::GetQuoteMultiplierK() {
+uint32_t InstrumentSymbol::GetQuoteMultiplierK() {
     return quote_multiplier_k_;
 }
 
-int32_t InstrumentSymbol::GetMakerFee() {
+uint32_t InstrumentSymbol::GetMakerFee() {
     return maker_fee_;
 }
 

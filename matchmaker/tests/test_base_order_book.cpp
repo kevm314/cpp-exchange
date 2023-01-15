@@ -35,6 +35,6 @@ class TestBaseOrderBook : public ::testing::Test {
 };
 
 TEST_F(TestBaseOrderBook, SimpleConstruction) {
-    matchmaker::BaseOrderBook base_ob = matchmaker::BaseOrderBook(eur_usd_pair);
-    ASSERT_EQ(base_ob.GetInstrumentSymbol().GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
+    matchmaker::BaseOrderBook base_ob = matchmaker::BaseOrderBook(&eur_usd_pair);
+    ASSERT_EQ(base_ob.GetInstrumentSymbol()->GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
 }

@@ -19,13 +19,13 @@ InstrumentMatchmaker::InstrumentMatchmaker(
 ):
     instrument_type_(instrument_type)
 {}
-bool InstrumentMatchmaker::AddSymbol(matchmaker::InstrumentSymbol& instrument_symbol) {
+bool InstrumentMatchmaker::AddSymbol(matchmaker::InstrumentSymbol* instrument_symbol) {
     // check symbol id not added to symbols map
-    if (instrument_symbols_.contains(instrument_symbol.GetInstrumentSymbolId()))
+    if (instrument_symbols_.contains(instrument_symbol->GetInstrumentSymbolId()))
         return false;
     // add to symbols map and then create corresponding orderbook
-    instrument_symbols_.emplace(std::make_pair(instrument_symbol.GetInstrumentSymbolId(), instrument_symbol));
-    symbol_orderbooks_.emplace(instrument_symbol.GetInstrumentSymbolId(), instrument_symbol);
+    instrument_symbols_.emplace(std::make_pair(instrument_symbol->GetInstrumentSymbolId(), instrument_symbol));
+    symbol_orderbooks_.emplace(instrument_symbol->GetInstrumentSymbolId(), instrument_symbol);
     return true;
 }
 uint16_t InstrumentMatchmaker::GetNumOrderBooks() {

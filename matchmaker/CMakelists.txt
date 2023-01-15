@@ -17,6 +17,7 @@ set(
     base_order_book.cpp
     instrument_matchmaker.cpp
     instrument_symbol.cpp
+    matchmaker_engine.cpp
     simple_order_book.cpp
     simple_price_bucket.cpp
     trade_event.cpp

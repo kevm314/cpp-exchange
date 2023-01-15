@@ -69,7 +69,7 @@ SimplePriceBucket& PriceBucketsIterator::GetCurrentBucket() {
 }
 
 SimpleOrderBook::SimpleOrderBook(
-    matchmaker::InstrumentSymbol instrument_symbol
+    matchmaker::InstrumentSymbol* instrument_symbol
 ):
     BaseOrderBook(instrument_symbol)
 {
@@ -83,7 +83,7 @@ bool SimpleOrderBook::DoesTradeExist(std::string trade_id) {
 }
 bool SimpleOrderBook::IsValidSymbolAndSize(matchmaker::TradeOrder& trade_order) {
     // must equal orderbook symbol id and size must be positive non-zero integer
-    return ((trade_order.GetInstrumentSymbolId() == GetInstrumentSymbol().GetInstrumentSymbolId()) && (trade_order.GetSize() > 0));
+    return ((trade_order.GetInstrumentSymbolId() == GetInstrumentSymbol()->GetInstrumentSymbolId()) && (trade_order.GetSize() > 0));
 }
 PriceBucketsIterator SimpleOrderBook::GetCandidatePriceBuckets(uint64_t price, TradeQuotationType counter_quote) {
     if (counter_quote == TradeQuotationType::BID) {
@@ -98,11 +98,11 @@ bool SimpleOrderBook::CreatePriceBucket(uint64_t price, TradeQuotationType count
     if (counter_quote == TradeQuotationType::BID) {
         if (bid_prices_.contains(price))
             return false;
-        return bid_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price))).second;
+        return bid_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol()->GetInstrumentSymbolId(), price))).second;
     } else {
         if (ask_prices_.contains(price))
             return false;
-        return ask_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol().GetInstrumentSymbolId(), price))).second;
+        return ask_prices_.emplace(std::make_pair(price, matchmaker::SimplePriceBucket(counter_quote, GetInstrumentSymbol()->GetInstrumentSymbolId(), price))).second;
     }
 }
 uint64_t SimpleOrderBook::GetNumberBuckets(TradeQuotationType counter_quote) {

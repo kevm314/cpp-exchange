@@ -11,11 +11,11 @@
 namespace matchmaker {
 
 BaseOrderBook::BaseOrderBook(
-    matchmaker::InstrumentSymbol instrument_symbol
+    matchmaker::InstrumentSymbol* instrument_symbol
 ):
     instrument_symbol_(instrument_symbol)
 {}
-matchmaker::InstrumentSymbol BaseOrderBook::GetInstrumentSymbol() {
+const matchmaker::InstrumentSymbol* BaseOrderBook::GetInstrumentSymbol() {
     return instrument_symbol_;
 }
 OrderOutcomeType BaseOrderBook::ConsumeOrder(matchmaker::TradeOrder& trade_order, std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events) {

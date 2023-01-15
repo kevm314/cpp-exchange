@@ -1,9 +1,13 @@
 {
     "symbols" : {
         "0" : {
-            "instrument_name": "MSFT",
-            "instrument_type": 3,
-            "maker_fee": 1
+            "instrument_name" : "MSFT",
+            "instrument_type" : 3,
+            "base_currency" : 0,
+            "quote_currency" : 0,
+            "base_multiplier_k" : 0,
+            "quote_multiplier_k" : 0,
+            "maker_fee" : 1
         }
     },
     "instrument_types": {

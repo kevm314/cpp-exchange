@@ -26,3 +26,10 @@ RUN git clone https://github.com/gabime/spdlog.git &&\
     mkdir build && cd build &&\
     cmake .. && make -j &&\
     make install
+
+RUN git clone https://github.com/nlohmann/json.git &&\
+    cd json &&\
+    git checkout tags/v3.11.2 &&\
+    mkdir build && cd build &&\
+    cmake .. && make -j3 &&\
+    make install

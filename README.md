@@ -14,6 +14,13 @@ A C++ based order matching system.
 doxygen exchange-docs
 ```
 
+## Running the exchange (TODO - fix up)
+
+- Run the below executable from the `./build` folder found in the root project directory (the file path is that of the configuration file):
+```
+./exchange ../matchmaker/exchange_configuration.json
+```
+
 ## Dependencies
 
 - Ensure to have docker installed using [this link](https://docs.docker.com/get-docker/).

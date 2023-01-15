@@ -10,10 +10,12 @@ namespace matchmaker {
  * 
  */
 enum InstrumentType {
-    CURRENCY_PAIR,
-    FUTURES_CONTRACT,
-    OPTION,
-    SHARE
+    CURRENCY_PAIR = 0,
+    FIRST_INSTRUMENT = CURRENCY_PAIR,
+    FUTURES_CONTRACT = 1,
+    OPTION = 2,
+    SHARE = 3,
+    LAST_INSTRUMENT = SHARE
 };
 
 /**
@@ -37,19 +39,19 @@ class InstrumentSymbol {
             uint32_t instrument_symbol_id,
             std::string instrument_name,
             InstrumentType instrument_type,
-            int32_t base_currency,
-            int32_t quote_currency,
-            int32_t base_multiplier_k,
-            int32_t quote_multiplier_k,
-            int32_t maker_fee
+            uint32_t base_currency,
+            uint32_t quote_currency,
+            uint32_t base_multiplier_k,
+            uint32_t quote_multiplier_k,
+            uint32_t maker_fee
         );
-        uint32_t GetInstrumentSymbolId();        
+        uint32_t GetInstrumentSymbolId() const;        
         InstrumentType GetInstrumentType();
-        int32_t GetBaseCurrency();
-        int32_t GetQuoteCurrency();
-        int32_t GetBaseMultiplierK();
-        int32_t GetQuoteMultiplierK();
-        int32_t GetMakerFee();
+        uint32_t GetBaseCurrency();
+        uint32_t GetQuoteCurrency();
+        uint32_t GetBaseMultiplierK();
+        uint32_t GetQuoteMultiplierK();
+        uint32_t GetMakerFee();
 
 };
 

@@ -96,6 +96,9 @@ std::string TradeOrder::GetTradeIdAsString() const {
 std::array<uint8_t, 36> TradeOrder::GetUserId() {
     return user_id_;
 }
+std::string TradeOrder::GetUserIdAsString() const {
+    return std::string(std::begin(user_id_), std::end(user_id_));
+}
 uint32_t TradeOrder::GetInstrumentSymbolId() {
     return instrument_symbol_id_;
 }

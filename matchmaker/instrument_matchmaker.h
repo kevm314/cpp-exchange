@@ -20,6 +20,7 @@ class InstrumentMatchmaker {
         std::unordered_map<uint64_t, matchmaker::SimpleOrderBook> symbol_orderbooks_;
         std::unordered_map<uint64_t, matchmaker::InstrumentSymbol*> instrument_symbols_;
     public:
+        InstrumentMatchmaker();
         InstrumentMatchmaker(
             matchmaker::InstrumentType instrument_type
         );

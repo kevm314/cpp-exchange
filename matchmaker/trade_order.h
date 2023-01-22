@@ -48,6 +48,7 @@ class TradeOrder {
         std::array<uint8_t, 36> GetTradeId();
         std::string GetTradeIdAsString() const;
         std::array<uint8_t, 36> GetUserId();
+        std::string GetUserIdAsString() const;
         uint32_t GetInstrumentSymbolId();
         TradeOrderType GetOrderType();
         TradeQuotationType GetQuotationType();

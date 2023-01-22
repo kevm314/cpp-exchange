@@ -2,6 +2,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
 #include <nlohmann/json.hpp>
 #include "spdlog/spdlog.h"
@@ -12,100 +13,53 @@
 #include "matchmaker/trade_event.h"
 #include "matchmaker/trade_order.h"
 
-// /**
-//  * @brief Playback function for running an exchange matchmaker thread per instrument type.
-//  * Each exchange matchmaker thread manages all orderbooks (1 per symbol) for the instrument type specified.
-//  * 
-//  */
-// void RunInstrumentMatchmakerPlayback(matchmaker::InstrumentMatchmaker& instrument_matchmaker) {
-//     spdlog::info("-- Playback mode running " + std::to_string(instrument_matchmaker.GetNumOrderBooks()) + " orderbook(s) for instrument type: " + std::to_string(instrument_matchmaker.GetInstrumentType()));
-    
-//     std::array<uint8_t, 36> id;
-    
-//     std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
-    
-//     // TODO: update below while loop with correct csv playback of orders
-//     bool is_bid = true;
-//     OrderOutcomeType outcome;
-//     while(true) {
-//         std::fill(id.begin(), id.end(), 1);
-//         matchmaker::TradeOrder simulated_bid = matchmaker::TradeOrder(
-//             id,
-//             id,
-//             1,
-//             TradeOrderType::GTC,
-//             TradeQuotationType::BID,
-//             OrderRequestType::PLACE_ORDER,
-//             OrderOutcomeType::NOT_PROCESSED,
-//             100,
-//             100,
-//             1    
-//         );
-//         std::fill(id.begin(), id.end(), 2);
-//         matchmaker::TradeOrder simulated_ask = matchmaker::TradeOrder(
-//             id,
-//             id,
-//             1,
-//             TradeOrderType::GTC,
-//             TradeQuotationType::ASK,
-//             OrderRequestType::PLACE_ORDER,
-//             OrderOutcomeType::NOT_PROCESSED,
-//             100,
-//             100,
-//             1    
-//         );
-//         if (is_bid) {
-//             outcome = instrument_matchmaker.ConsumeOrder(simulated_bid, trade_events);
-//         } else {
-//             outcome = instrument_matchmaker.ConsumeOrder(simulated_ask, trade_events);
-//         }
-//         is_bid = !is_bid;
-//         spdlog::info("Trade order request outcome code: " + std::to_string(outcome));
-//         std::this_thread::sleep_for (std::chrono::seconds(1));
-//     }
 
-//     return;
+// TODO: add below into own header/cpp file for running exchange as queue based
+/**
+ * @brief Run an exchange matchmaker thread per instrument type.
+ * Each exchange matchmaker thread manages all orderbooks (1 per symbol) for the instrument type specified.
+ * 
+ */
+void RunInstrumentMatchmakerQueueBased(matchmaker::InstrumentMatchmaker& instrument_matchmaker) {
+    spdlog::info("-- Playback mode running " + std::to_string(instrument_matchmaker.GetNumOrderBooks()) + " orderbook(s) for instrument type: " + std::to_string(instrument_matchmaker.GetInstrumentType()));
+
+    // OrderOutcomeType outcome;
+    while(true) {
+        // TODO: have async method of passing TradeOrder objects into the thread (disruptor pattern OR simple ring buffer => need to plan)
+        // std::shared_ptr<std::vector<matchmaker::TradeEvent>> trade_events = std::make_shared<std::vector<matchmaker::TradeEvent>>();
+        // outcome = instrument_matchmaker.ConsumeOrder(trade_order, trade_events);
+        // spdlog::info("Trade order request outcome code: " + std::to_string(outcome));
+        std::this_thread::sleep_for (std::chrono::milliseconds(10));
+    }
+
+    return;
+}
+
+// void RunProducerQueueBased() {
+
 // }
 
-// /**
-//  * @brief Function which spawns the appropriate number of threads per instrument type based off a configuration file.
-//  * 
-//  */
-// void SpawnExchangeInstrumentMatchmakers() {
-//     spdlog::info("-- Starting exchange matchmakers");
-
-//     // TODO: update mocking input of instrument types and symbols from config file (1 instrument type containing 1 symbol for now)
-//     matchmaker::InstrumentType instrument_type = matchmaker::InstrumentType::SHARE;
-//     uint32_t instrument_symbol_id = 1;
-//     int32_t base_currency = 0;
-//     int32_t quote_currency = 0;
-//     int32_t base_multiplier_k = 0;
-//     int32_t quote_multiplier_k = 0;
-//     int32_t maker_fee = 1;
-//     matchmaker::InstrumentSymbol instrument_symbol = matchmaker::InstrumentSymbol(
-//         instrument_symbol_id,
-//         "test_symbol",
-//         instrument_type,
-//         base_currency,
-//         quote_currency,
-//         base_multiplier_k,
-//         quote_multiplier_k,
-//         maker_fee
-//     );
-
-//     // TODO: store matchmaker objects per instrument type (so easily dispatchable per business logic thread?)
-//     matchmaker::InstrumentMatchmaker share_matchmaker = matchmaker::InstrumentMatchmaker(instrument_type);
-//     // TODO: fix how InstrumentSymbol is copied by value when constructing orderbook
-//     // for loop for symbol adding
-//     uint16_t num_symbols = 1;
-//     for (uint16_t index = 0; index < num_symbols; index++) {
-//         share_matchmaker.AddSymbol(&instrument_symbol);
-//     }
-//     // run "thread" function
-//     RunInstrumentMatchmakerPlayback(share_matchmaker);
-
-//     return;
-// }
+void RunExchangeQueueBased(std::unordered_map<matchmaker::InstrumentType, matchmaker::InstrumentMatchmaker>& instrument_type_matchmakers) {
+    //TODO: move below to running as queue based
+    // TODO: set up csv playback loading to mimic streaming TradeOrder objects into the ring buffer (managed by appropriate thread)
+    // set up threads 1 per instrument type to manage matchmaking across all corresponding orderbooks
+    if (instrument_type_matchmakers.contains(matchmaker::InstrumentType::CURRENCY_PAIR)) {
+        std::thread currencies(RunInstrumentMatchmakerQueueBased, std::ref(instrument_type_matchmakers[matchmaker::InstrumentType::CURRENCY_PAIR]));
+        currencies.join();
+    }
+    if (instrument_type_matchmakers.contains(matchmaker::InstrumentType::FUTURES_CONTRACT)) {
+        std::thread futures(RunInstrumentMatchmakerQueueBased, std::ref(instrument_type_matchmakers[matchmaker::InstrumentType::FUTURES_CONTRACT]));
+        futures.join();
+    }
+    if (instrument_type_matchmakers.contains(matchmaker::InstrumentType::OPTION)){
+        std::thread options(RunInstrumentMatchmakerQueueBased, std::ref(instrument_type_matchmakers[matchmaker::InstrumentType::OPTION]));
+        options.join();
+    }
+    if (instrument_type_matchmakers.contains(matchmaker::InstrumentType::SHARE)) {
+        std::thread shares(RunInstrumentMatchmakerQueueBased, std::ref(instrument_type_matchmakers[matchmaker::InstrumentType::SHARE]));
+        shares.join();
+    }
+}
 
 bool IsValidConfigKeys(nlohmann::json& data) {
     if (data.contains("symbols") && data.contains("instrument_types")) {
@@ -154,7 +108,7 @@ int main(int argc, char* argv[]) {
         &symbols_map,
         &data
     );
-    // TODO: set up threads 1 per instrument type to manage matchmaking across all corresponding orderbooks
-    // TODO: set up csv playback loading to mimic streaming TradeOrder objects into the ring buffer (managed by appropriate thread)
+    RunExchangeQueueBased(instrument_type_matchmakers);
+
     return 0;
 }

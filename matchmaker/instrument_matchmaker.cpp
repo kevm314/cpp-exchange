@@ -14,6 +14,9 @@
 
 namespace matchmaker {
 
+InstrumentMatchmaker::InstrumentMatchmaker():
+    instrument_type_(matchmaker::InstrumentType::SHARE)
+{}
 InstrumentMatchmaker::InstrumentMatchmaker(
     matchmaker::InstrumentType instrument_type
 ):

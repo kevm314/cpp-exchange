@@ -18,7 +18,7 @@ doxygen exchange-docs
 
 - Run the below executable from the `./build` folder found in the root project directory (the file path is that of the configuration file):
 ```
-./exchange ../matchmaker/exchange_configuration.json
+./exchange ../matchmaker/exchange_configuration.json ../events_receiver/data/three_users_playback.csv
 ```
 
 ## Dependencies

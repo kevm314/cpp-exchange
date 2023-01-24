@@ -83,12 +83,15 @@ void RunProducerQueueBased(
 
 void RunExchangeQueueBased(
     std::unordered_map<matchmaker::InstrumentType, matchmaker::InstrumentMatchmaker>& instrument_type_matchmakers,
-    std::unordered_map<uint32_t, matchmaker::InstrumentSymbol>& symbols_map
+    std::unordered_map<uint32_t, matchmaker::InstrumentSymbol>& symbols_map,
+    std::string& playback_path
 ) {
     // playback producer
-    // TODO: update path string to be command line args input
-    events_receiver::PlaybackProducer playback_producer = events_receiver::PlaybackProducer(1, "../events_receiver/data/three_users_playback.csv");
-
+    events_receiver::PlaybackProducer playback_producer = events_receiver::PlaybackProducer(1, playback_path);
+    if (!playback_producer.IsInstantiated()) {
+        spdlog::critical("Error encountered in instantiating the playback producer");
+        return;
+    }
     // set up queues for each instrument type matchmaking engine
     comms::ScopeLockedQueue<matchmaker::TradeOrder> currencies_queue = comms::ScopeLockedQueue<matchmaker::TradeOrder>();
     comms::ScopeLockedQueue<matchmaker::TradeOrder> futures_queue = comms::ScopeLockedQueue<matchmaker::TradeOrder>();
@@ -168,6 +171,11 @@ int main(int argc, char* argv[]) {
         spdlog::critical("No config file path provided - exiting ...");
         return 0;
     }
+    if (argv[2] == nullptr) {
+        spdlog::critical("No playback file path provided - exiting ...");
+        return 0;
+    }
+    std::string playback_path(argv[2]);
     nlohmann::json data;
     try {
         std::string filepath(argv[1]);
@@ -189,7 +197,7 @@ int main(int argc, char* argv[]) {
         &symbols_map,
         &data
     );
-    RunExchangeQueueBased(instrument_type_matchmakers, symbols_map);
+    RunExchangeQueueBased(instrument_type_matchmakers, symbols_map, playback_path);
 
     return 0;
 }

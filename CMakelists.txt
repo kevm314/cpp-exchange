@@ -30,14 +30,20 @@ endif()
 include_directories("/usr/local/lib")
 include_directories("/usr/local/include")
 include_directories(matchmaker)
+include_directories(events_receiver)
+include_directories(comms)
 
 add_subdirectory(./matchmaker)
+add_subdirectory(./events_receiver)
+add_subdirectory(./comms)
 
 set(
   TARGET_LIBRARIES
   spdlog::spdlog
   nlohmann_json::nlohmann_json
   matchmaker
+  receiver
+  comms
 )
 
 add_executable(exchange main.cpp)

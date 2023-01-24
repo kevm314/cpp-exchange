@@ -30,6 +30,7 @@ class TradeOrder {
         TradeOrder* next_order_;
         uint64_t filled_;
     public:
+        TradeOrder();
         TradeOrder(
             std::array<uint8_t, 36> trade_id,
             std::array<uint8_t, 36> user_id,

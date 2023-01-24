@@ -7,6 +7,7 @@
 
 namespace matchmaker {
 
+TradeOrder::TradeOrder() {}
 TradeOrder::TradeOrder(
     std::array<uint8_t, 36> trade_id, 
     std::array<uint8_t, 36> user_id,

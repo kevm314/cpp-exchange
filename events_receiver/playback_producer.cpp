@@ -114,7 +114,9 @@ matchmaker::TradeOrder PlaybackProducer::ReceiveEvent() {
     // return events as a stream and wrap to start if end is reached
     if (current_event_ == events_.end())
         current_event_ = events_.begin();
-    return *current_event_;
+    std::list<matchmaker::TradeOrder>::iterator return_event_it(current_event_);
+    current_event_++;
+    return *return_event_it;
 }
 bool PlaybackProducer::IsInstantiated() {
     return is_successfully_instantiated_;

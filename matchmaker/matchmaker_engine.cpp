@@ -89,7 +89,6 @@ void MatchmakerEngine::AddSymbolsForInstrumentType(
         }
 
         spdlog::info("    Adding symbol id: " + current_symbol_id);
-        matchmaker::InstrumentType instrument_type = instrument_type;
         std::string instrument_name = (*data)["symbols"][current_symbol_id]["instrument_name"];
         uint32_t instrument_symbol_id = (*symbols).get<int>();
         uint32_t base_currency = (*data)["symbols"][current_symbol_id]["base_currency"].get<uint32_t>();
@@ -103,7 +102,7 @@ void MatchmakerEngine::AddSymbolsForInstrumentType(
             matchmaker::InstrumentSymbol(
                 instrument_symbol_id,
                 instrument_name,
-                instrument_type,
+                instrument_matchmaker.GetInstrumentType(),
                 base_currency,
                 quote_currency,
                 base_multiplier_k,

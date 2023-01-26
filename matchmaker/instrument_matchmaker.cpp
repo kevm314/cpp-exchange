@@ -31,7 +31,7 @@ InstrumentMatchmaker::InstrumentMatchmaker(
 bool InstrumentMatchmaker::AddSymbol(matchmaker::InstrumentSymbol* instrument_symbol) {
     // check incorrect symbol type
     if (instrument_type_ != instrument_symbol->GetInstrumentType()) {
-        spdlog::warn("InstrumentMatchmaker cannot symbol with different instrument type");
+        spdlog::warn("InstrumentMatchmaker cannot add symbol with different instrument type -> instrument_matchmaker: " + std::to_string(instrument_type_) + " symbol to add " + std::to_string(instrument_symbol->GetInstrumentType()));
         return false;
     }
     // check symbol id not already added to symbols map

@@ -57,7 +57,7 @@ void RunProducerQueueBased(
         matchmaker::TradeOrder trade_order = playback_producer.ReceiveEvent();
         std::unordered_map<uint32_t, matchmaker::InstrumentSymbol>::iterator it_type = symbols_map.find(trade_order.GetInstrumentSymbolId());
         if (it_type == symbols_map.end()) {
-            spdlog::warn("PP thread - unable to process stream event as unsupported instrument type");
+            spdlog::warn("PP thread - unable to process stream event as unsupported instrument type (symbol not registered)" + std::to_string(trade_order.GetInstrumentSymbolId()));
             continue;
         }
         spdlog::info("PP thread - streaming trade order event of instrument type: " + std::to_string(it_type->second.GetInstrumentType()));

@@ -31,6 +31,7 @@ add_library(receiver ${TARGET_SOURCES})
 
 # Test executable for project (overall testing)
 if (TEST)
+    target_compile_definitions(exchange-test PUBLIC MAIN_TEST_BUILD)
     target_sources(
         exchange-test
         PUBLIC

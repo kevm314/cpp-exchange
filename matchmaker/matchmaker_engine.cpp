@@ -14,6 +14,7 @@
 #include "instrument_symbol.h"
 #include "matchmaker_engine.h"
 #include "simple_order_book.h"
+#include "simple_order_book_factory.h"
 #include "trade_event.h"
 
 namespace matchmaker {
@@ -42,7 +43,11 @@ void MatchmakerEngine::ConfigureInstrumentMatchmakersPerType(
         }
         spdlog::info("Processing instrument type: " + instrument_type);
         // create instrument matchmakers class for current instrument type
-        std::pair<std::unordered_map<matchmaker::InstrumentType, matchmaker::InstrumentMatchmaker>::iterator, bool> instrument_matchmakers_it = instrument_type_matchmakers_->emplace(std::make_pair(instrument_type, instrument_type));
+        std::pair<std::unordered_map<matchmaker::InstrumentType, matchmaker::InstrumentMatchmaker>::iterator, bool> instrument_matchmakers_it = instrument_type_matchmakers_->emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(instrument_type),
+            std::forward_as_tuple(instrument_type, std::move(std::make_shared<matchmaker::SimpleOrderBookFactory>()))
+        );
         if (!instrument_matchmakers_it.second) {
             spdlog::critical("Unable to add matchmakers object for instrument type: " + instrument_type);
             continue;

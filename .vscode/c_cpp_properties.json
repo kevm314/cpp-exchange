@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "/usr/local/include/**",
                 "/usr/local/lib/**",
-                "${workspaceFolder}/comms"
+                "${workspaceFolder}/comms",
+                "${workspaceFolder}/matchmaker"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

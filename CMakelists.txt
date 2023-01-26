@@ -56,6 +56,7 @@ if (TEST)
       exchange-test
       gtest_main
       gtest
+      gmock
       pthread
   )
 endif()

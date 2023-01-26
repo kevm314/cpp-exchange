@@ -7,6 +7,7 @@
 #include "instrument_symbol.h"
 #include "order_outcome_types.h"
 #include "order_request_types.h"
+#include "simple_order_book.h"
 #include "trade_order.h"
 #include "trade_order_types.h"
 #include "trade_quotation_types.h"
@@ -35,6 +36,6 @@ class TestBaseOrderBook : public ::testing::Test {
 };
 
 TEST_F(TestBaseOrderBook, SimpleConstruction) {
-    matchmaker::BaseOrderBook base_ob = matchmaker::BaseOrderBook(&eur_usd_pair);
-    ASSERT_EQ(base_ob.GetInstrumentSymbol()->GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
+    matchmaker::SimpleOrderBook simple_ob = matchmaker::SimpleOrderBook(&eur_usd_pair);
+    ASSERT_EQ(simple_ob.GetInstrumentSymbol()->GetInstrumentSymbolId(), eur_usd_pair.GetInstrumentSymbolId());
 }

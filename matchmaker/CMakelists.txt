@@ -18,7 +18,9 @@ set(
     instrument_matchmaker.cpp
     instrument_symbol.cpp
     matchmaker_engine.cpp
+    order_book_factory.cpp
     simple_order_book.cpp
+    simple_order_book_factory.cpp
     simple_price_bucket.cpp
     trade_event.cpp
     trade_order.cpp
@@ -26,6 +28,7 @@ set(
 set(
     TEST_SOURCES 
     tests/test_base_order_book.cpp
+    tests/test_instrument_matchmaker.cpp
     tests/test_simple_order_book.cpp
     tests/test_simple_price_bucket.cpp
     tests/test_trade_order.cpp
@@ -56,6 +59,7 @@ if (MATCHMAKER_TEST)
     target_link_libraries(
         matchmaker-test
         gtest_main
+        gmock
         gtest
         pthread
     )

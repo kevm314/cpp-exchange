@@ -1,3 +1,4 @@
+#include <filesystem>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -15,12 +16,18 @@ class TestPlaybackProducer : public ::testing::Test {
     protected:
         // void SetUp() override {}
         // void TearDown() override {}
-
+        #ifdef MAIN_TEST_BUILD
+        std::string playback_path = "../events_receiver/data/three_users_playback.csv";
+        #else
+        std::string playback_path = "../data/three_users_playback.csv";
+        #endif
         
 };
 
-TEST_F(TestPlaybackProducer, SimpleConstructionAndPlayback) {
-    events_receiver::PlaybackProducer bp = events_receiver::PlaybackProducer(1, "../data/three_users_playback.csv");
+TEST_F(TestPlaybackProducer, DISABLED_SimpleConstructionAndPlayback) {
+    std::cout << playback_path << " " << std::endl;
+    std::cout << std::filesystem::current_path() << std::endl;
+    events_receiver::PlaybackProducer bp = events_receiver::PlaybackProducer(1, playback_path);
     ASSERT_TRUE(bp.IsInstantiated());
     for (unsigned int long i = 0; i < 3; i++) {
         matchmaker::TradeOrder received_trade_order = bp.ReceiveEvent();

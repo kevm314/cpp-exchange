@@ -24,9 +24,7 @@ class TestPlaybackProducer : public ::testing::Test {
         
 };
 
-TEST_F(TestPlaybackProducer, DISABLED_SimpleConstructionAndPlayback) {
-    std::cout << playback_path << " " << std::endl;
-    std::cout << std::filesystem::current_path() << std::endl;
+TEST_F(TestPlaybackProducer, SimpleConstructionAndPlayback) {
     events_receiver::PlaybackProducer bp = events_receiver::PlaybackProducer(1, playback_path);
     ASSERT_TRUE(bp.IsInstantiated());
     for (unsigned int long i = 0; i < 3; i++) {
@@ -41,6 +39,18 @@ TEST_F(TestPlaybackProducer, DISABLED_SimpleConstructionAndPlayback) {
         ASSERT_EQ(received_trade_order.GetPrice(), 132);
         ASSERT_EQ(received_trade_order.GetSize(), 1000);
         ASSERT_EQ(received_trade_order.GetTimestamp(), 1);
+
+        received_trade_order = bp.ReceiveEvent();
+        ASSERT_EQ(received_trade_order.GetTradeIdAsString(), "46ac997e-e588-413c-af6a-22df294795f0");
+        ASSERT_EQ(received_trade_order.GetUserIdAsString(), "cfdb430b-0bc6-4d7c-a024-88d0af5a9b1d");
+        ASSERT_EQ(received_trade_order.GetInstrumentSymbolId(), 0);
+        ASSERT_EQ(received_trade_order.GetOrderType(), TradeOrderType::GTC);
+        ASSERT_EQ(received_trade_order.GetQuotationType(), TradeQuotationType::ASK);
+        ASSERT_EQ(received_trade_order.GetRequestType(), OrderRequestType::PLACE_ORDER);
+        ASSERT_EQ(received_trade_order.GetOrderOutcome(), OrderOutcomeType::NOT_PROCESSED);
+        ASSERT_EQ(received_trade_order.GetPrice(), 132);
+        ASSERT_EQ(received_trade_order.GetSize(), 1000);
+        ASSERT_EQ(received_trade_order.GetTimestamp(), 2);
         // test wrap around on events stream of size 1
     }
 }
